@@ -14,6 +14,26 @@ Format:
 
 ---
 
+## 2026-07-07 — Trial gate: da 50 totali a "50 upfront, poi 20/giorno"
+- **Did:** rivisto il paywall trial. Prima: cap fisso di 50 chiamate lifetime,
+  poi blocco definitivo. Ora: le prime 50 (pool `TRIAL_TOOL_CALL_LIMIT`) restano
+  usabili a qualsiasi ritmo; esaurite, l'utente passa a un'allowance giornaliera
+  ricorrente di 20 (`DAILY_TOOL_CALL_LIMIT`) che si azzera a **mezzanotte
+  Europe/Rome**. Messaggio di blocco giornaliero: "hai raggiunto il limite
+  giornaliero… torna domani, oppure abbonati". Modello e reset scelti
+  esplicitamente dall'utente.
+- **Changed:** nuova migration `code/supabase/migrations/00002_daily_usage.sql`
+  (colonne `daily_usage_count`/`daily_usage_date` Rome-local + `increment_usage`
+  rifatta col reset giornaliero); `code/lib/billing/gate.ts` (`decide` a due fasi,
+  `getDailyLimit`/`getTrialLimits`, campi `dailyUsageCount`/`dailyLimit` su
+  `GateDecision`, `getBillingRow` legge le nuove colonne); pagine `code/app/
+  {upgrade,account}/page.tsx` mostrano l'allowance del giorno in fase 2 invece di
+  un fuorviante 50/50; nuovi test `code/lib/billing/__tests__/gate.test.ts` (10);
+  aggiornato [billing-setup.md](content/knowledge/billing-setup.md).
+- **Follow-ups:** ADR 0002 dice ancora "free trial = tool-call count" senza il
+  daily — valutare se registrarne la revisione con un ADR quando il modello si
+  stabilizza. Migration 00002 va eseguita in Supabase (SQL Editor) al deploy.
+
 ## 2026-07-07 — Paywall: link con token firmato → checkout senza re-login
 - **Did:** eliminato il re-login AuthKit nel percorso paywall → pagamento. Il
   server MCP conosce già l'utente (JWT verificato), quindi firma un token di

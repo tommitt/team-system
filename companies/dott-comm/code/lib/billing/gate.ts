@@ -22,6 +22,9 @@ export type GateDecision = {
   plan: Plan | "unknown"; // "unknown" on DB error
   usageCount: number;
   limit: number;
+  /** Calls made today (Europe/Rome) and the recurring daily allowance. */
+  dailyUsageCount?: number;
+  dailyLimit?: number;
   /** Appended to the tool result when usage nears the limit or payment is past due. */
   warning?: string;
   /** Replaces the tool result when the call is blocked. */
@@ -34,15 +37,36 @@ export type BillingRow = {
   stripe_subscription_id: string | null;
   plan: Plan;
   usage_count: number;
+  daily_usage_count: number;
+  daily_usage_date: string;
   trial_started_at: string;
 };
 
+/** Trial = "50 upfront, then 20/day" (see migration 00002). */
 const DEFAULT_TRIAL_LIMIT = 50;
+const DEFAULT_DAILY_LIMIT = 20;
 const WARN_RATIO = 0.8;
 
+export type TrialLimits = { total: number; daily: number };
+export type TrialUsage = { total: number; daily: number };
+
+function envLimit(name: string, fallback: number): number {
+  const parsed = Number(process.env[name]);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** The upfront lifetime pool: calls usable at any pace before the daily cap. */
 export function getTrialLimit(): number {
-  const parsed = Number(process.env.TRIAL_TOOL_CALL_LIMIT);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_TRIAL_LIMIT;
+  return envLimit("TRIAL_TOOL_CALL_LIMIT", DEFAULT_TRIAL_LIMIT);
+}
+
+/** The recurring daily allowance once the upfront pool is spent. */
+export function getDailyLimit(): number {
+  return envLimit("DAILY_TOOL_CALL_LIMIT", DEFAULT_DAILY_LIMIT);
+}
+
+export function getTrialLimits(): TrialLimits {
+  return { total: getTrialLimit(), daily: getDailyLimit() };
 }
 
 /**
@@ -68,14 +92,25 @@ const DB_ERROR_MESSAGE =
  * Pure decision function — kept separate so paid caps can be added later.
  * `userId`, when passed, is embedded in a signed token in the upgrade URL so
  * the paywall link skips AuthKit re-login.
+ *
+ * Trial model is "50 upfront, then 20/day": while lifetime usage is within the
+ * upfront pool (`limits.total`) any pace is fine; once it's spent the user is
+ * gated by a recurring daily allowance (`limits.daily`, resets at Rome midnight —
+ * the daily counter is maintained by the `increment_usage` RPC).
  */
 export function decide(
   plan: Plan,
-  usageCount: number,
-  limit: number,
+  usage: TrialUsage,
+  limits: TrialLimits,
   userId?: string,
 ): GateDecision {
-  const base = { plan, usageCount, limit };
+  const base = {
+    plan,
+    usageCount: usage.total,
+    limit: limits.total,
+    dailyUsageCount: usage.daily,
+    dailyLimit: limits.daily,
+  };
   const upgrade = upgradeUrl(userId);
 
   switch (plan) {
@@ -98,22 +133,36 @@ export function decide(
           `Per riattivarlo e continuare a usare gli strumenti: ${upgrade}`,
       };
     case "trial": {
-      if (usageCount > limit) {
+      // Phase 1 — the upfront lifetime pool, usable at any pace.
+      if (usage.total <= limits.total) {
+        if (usage.total >= Math.ceil(limits.total * WARN_RATIO)) {
+          return {
+            ...base,
+            allowed: true,
+            warning:
+              `ℹ️ Hai usato ${usage.total}/${limits.total} chiamate del credito iniziale gratuito di Dott. Comm. ` +
+              `Dopo passerai a ${limits.daily} chiamate gratuite al giorno; per usare senza limiti attiva l'abbonamento: ${upgrade}`,
+          };
+        }
+        return { ...base, allowed: true };
+      }
+      // Phase 2 — recurring daily allowance (resets at midnight, Europe/Rome).
+      if (usage.daily > limits.daily) {
         return {
           ...base,
           allowed: false,
           blockedMessage:
-            `Il periodo di prova gratuito di Dott. Comm. è terminato (${limit} chiamate). ` +
-            `Per continuare senza limiti, attiva l'abbonamento: ${upgrade}`,
+            `Hai raggiunto il limite giornaliero di chiamate gratuite di Dott. Comm. (${limits.daily} al giorno). ` +
+            `Torna domani, oppure attiva l'abbonamento per continuare senza limiti: ${upgrade}`,
         };
       }
-      if (usageCount >= Math.ceil(limit * WARN_RATIO)) {
+      if (usage.daily >= Math.ceil(limits.daily * WARN_RATIO)) {
         return {
           ...base,
           allowed: true,
           warning:
-            `ℹ️ Hai usato ${usageCount}/${limit} chiamate della prova gratuita di Dott. Comm. ` +
-            `Per continuare senza limiti: ${upgrade}`,
+            `ℹ️ Hai usato ${usage.daily}/${limits.daily} chiamate gratuite di oggi. ` +
+            `Al termine potrai continuare domani, oppure attiva l'abbonamento per non avere limiti: ${upgrade}`,
         };
       }
       return { ...base, allowed: true };
@@ -129,20 +178,27 @@ export function decide(
 export async function checkAndRecordUsage(
   workosUserId: string,
 ): Promise<GateDecision> {
-  const limit = getTrialLimit();
+  const limits = getTrialLimits();
   try {
     const { data, error } = await getSupabaseAdmin()
       .rpc("increment_usage", { p_workos_user_id: workosUserId })
-      .single<{ usage_count: number; plan: Plan }>();
+      .single<{ usage_count: number; daily_usage_count: number; plan: Plan }>();
     if (error || !data) throw error ?? new Error("increment_usage returned no row");
-    return decide(data.plan, data.usage_count, limit, workosUserId);
+    return decide(
+      data.plan,
+      { total: data.usage_count, daily: data.daily_usage_count },
+      limits,
+      workosUserId,
+    );
   } catch (err) {
     console.error("Billing gate failed (blocking call, fail closed):", err);
     return {
       allowed: false,
       plan: "unknown",
       usageCount: 0,
-      limit,
+      limit: limits.total,
+      dailyUsageCount: 0,
+      dailyLimit: limits.daily,
       blockedMessage: DB_ERROR_MESSAGE,
     };
   }
@@ -155,7 +211,7 @@ export async function getBillingRow(
   const { data, error } = await getSupabaseAdmin()
     .from("users_billing")
     .select(
-      "workos_user_id, stripe_customer_id, stripe_subscription_id, plan, usage_count, trial_started_at",
+      "workos_user_id, stripe_customer_id, stripe_subscription_id, plan, usage_count, daily_usage_count, daily_usage_date, trial_started_at",
     )
     .eq("workos_user_id", workosUserId)
     .maybeSingle<BillingRow>();

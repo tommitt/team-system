@@ -2,7 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { BillingShell } from "@/components/BillingShell";
-import { getBillingRow, getTrialLimit, type Plan } from "@/lib/billing/gate";
+import {
+  getBillingRow,
+  getDailyLimit,
+  getTrialLimit,
+  type Plan,
+} from "@/lib/billing/gate";
 import { openCustomerPortal } from "../upgrade/actions";
 
 export const metadata = { title: "Account — DottComm" };
@@ -25,6 +30,14 @@ export default async function AccountPage() {
   const plan: Plan = row?.plan ?? "trial";
   const usage = row?.usage_count ?? 0;
   const limit = getTrialLimit();
+  // Trial is "upfront pool, then daily": once the pool is spent, usage is the
+  // recurring daily allowance (resets at Rome midnight).
+  const inDailyPhase = usage > limit;
+  const dailyUsage = row?.daily_usage_count ?? 0;
+  const dailyLimit = getDailyLimit();
+  const trialUsageLabel = inDailyPhase
+    ? `${Math.min(dailyUsage, dailyLimit)}/${dailyLimit} oggi`
+    : `${Math.min(usage, limit)}/${limit}`;
 
   return (
     <BillingShell>
@@ -47,9 +60,7 @@ export default async function AccountPage() {
         </div>
         <div className="billing-row">
           <dt>Chiamate effettuate</dt>
-          <dd>
-            {plan === "trial" ? `${Math.min(usage, limit)}/${limit}` : usage}
-          </dd>
+          <dd>{plan === "trial" ? trialUsageLabel : usage}</dd>
         </div>
 
         {row?.stripe_customer_id ? (

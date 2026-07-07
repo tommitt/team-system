@@ -1,6 +1,11 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { BillingShell } from "@/components/BillingShell";
-import { getBillingRow, getTrialLimit, type Plan } from "@/lib/billing/gate";
+import {
+  getBillingRow,
+  getDailyLimit,
+  getTrialLimit,
+  type Plan,
+} from "@/lib/billing/gate";
 import { verifyUpgradeToken } from "@/lib/billing/upgrade-token";
 import { openCustomerPortal, signIn, startCheckout } from "./actions";
 
@@ -49,7 +54,22 @@ export default async function UpgradePage({
   const plan: Plan = row?.plan ?? "trial";
   const usage = row?.usage_count ?? 0;
   const limit = getTrialLimit();
-  const usagePct = Math.min(100, Math.round((usage / limit) * 100));
+  // Trial is "upfront pool, then daily": once the pool is spent, show the
+  // recurring daily allowance (resets at Rome midnight) instead of a stuck 50/50.
+  const inDailyPhase = usage > limit;
+  const dailyUsage = row?.daily_usage_count ?? 0;
+  const dailyLimit = getDailyLimit();
+  const usageLabel = inDailyPhase
+    ? `${Math.min(dailyUsage, dailyLimit)}/${dailyLimit} oggi`
+    : `${Math.min(usage, limit)}/${limit}`;
+  const usagePct = Math.min(
+    100,
+    Math.round(
+      ((inDailyPhase ? dailyUsage : usage) /
+        (inDailyPhase ? dailyLimit : limit)) *
+        100,
+    ),
+  );
 
   return (
     <BillingShell>
@@ -82,9 +102,7 @@ export default async function UpgradePage({
           <>
             <div className="billing-row">
               <dt>Utilizzo prova gratuita</dt>
-              <dd>
-                {Math.min(usage, limit)}/{limit} chiamate
-              </dd>
+              <dd>{usageLabel} chiamate</dd>
             </div>
             <div className="billing-usage-track">
               <div

@@ -32,16 +32,22 @@ Stripe webhook ──▶ /api/stripe/webhook ──▶ flips plan in Supabase
               → the user's NEXT tool call is unblocked (no token refresh)
 ```
 
-Free trial = **50 tool calls** by default (`TRIAL_TOOL_CALL_LIMIT`); a warning
-is appended to results from 80% of the limit. Paid plan = flat monthly Stripe
-subscription, unlimited (usage still recorded). **Fail closed**: Supabase
-unreachable → the call is blocked with a friendly Italian message, never
-served unmetered.
+Free trial = **50 upfront calls, then 20/day** — the first `TRIAL_TOOL_CALL_LIMIT`
+(default 50) tool calls are a lifetime pool usable at any pace; once spent, the
+user drops to a recurring daily allowance of `DAILY_TOOL_CALL_LIMIT` (default 20)
+calls that refills at **midnight Europe/Rome**. A warning is appended to results
+from 80% of whichever cap is active; the daily block message is "come back
+tomorrow or upgrade". Paid plan = flat monthly Stripe subscription, unlimited
+(usage still recorded). **Fail closed**: Supabase unreachable → the call is
+blocked with a friendly Italian message, never served unmetered.
 
 ## Relevant code (`companies/dott-comm/code/`)
 
 - `supabase/migrations/00001_users_billing.sql` — `users_billing` table
   (RLS on, zero policies → service-role only) + `increment_usage()` RPC.
+- `supabase/migrations/00002_daily_usage.sql` — adds `daily_usage_count` /
+  `daily_usage_date` (Rome-local) and reworks `increment_usage()` to maintain
+  the per-day counter (reset when the stored date isn't today).
 - `lib/billing/supabase.ts` — service-role client singleton (`server-only`).
 - `lib/billing/gate.ts` — `checkAndRecordUsage`, pure `decide()` behavior
   matrix, `getBillingRow`.
@@ -60,7 +66,7 @@ served unmetered.
 
 | plan | tool calls | set by |
 |---|---|---|
-| `trial` (default) | allowed up to limit, then blocked | lazy provisioning on first gated call |
+| `trial` (default) | 50 upfront calls, then 20/day (Rome midnight reset), then daily block | lazy provisioning on first gated call |
 | `active` | unlimited | `checkout.session.completed`, subscription `active`/`trialing` |
 | `past_due` | allowed + fix-payment warning (Stripe is dunning) | subscription `past_due` |
 | `canceled` | blocked with reactivate message | subscription deleted / `canceled`/`unpaid`/`incomplete_expired` |
@@ -70,7 +76,8 @@ served unmetered.
 | Var | Purpose |
 |---|---|
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | entitlement store (server-only; anon key unused) |
-| `TRIAL_TOOL_CALL_LIMIT` | free-trial cap (default 50) |
+| `TRIAL_TOOL_CALL_LIMIT` | upfront lifetime pool (default 50) |
+| `DAILY_TOOL_CALL_LIMIT` | recurring daily allowance after the pool (default 20) |
 | `NEXT_PUBLIC_SITE_URL` | builds the `/upgrade` link inside tool responses |
 | `MCP_DEV_USER_ID` | dev only: exercise the gate with auth off |
 | `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | website AuthKit sessions (same WorkOS env as the MCP AS) |
@@ -78,8 +85,9 @@ served unmetered.
 
 ## Setup steps
 
-1. **Supabase**: create project → run `supabase/migrations/00001_users_billing.sql`
-   in the SQL Editor → copy `SUPABASE_URL` + service_role key.
+1. **Supabase**: create project → run the `supabase/migrations/*.sql` files in
+   order (`00001_users_billing.sql`, then `00002_daily_usage.sql`) in the SQL
+   Editor → copy `SUPABASE_URL` + service_role key.
 2. **Stripe (test mode)**: create Product + flat monthly Price → `STRIPE_PRICE_ID`;
    add webhook endpoint `https://<prod>/api/stripe/webhook` with events
    `checkout.session.completed`, `customer.subscription.updated`,
