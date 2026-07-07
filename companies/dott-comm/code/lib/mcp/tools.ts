@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerOnboarding } from "./skills/onboarding";
 import { registerProspettoAcconti } from "./skills/prospetto-acconti";
 import { registerEstraiDocumenti } from "./skills/estrai-documenti";
 import { registerRavvedimento } from "./skills/ravvedimento";
@@ -22,6 +23,10 @@ import { registerPrompts } from "./prompts";
  * studio, gestiti dal client (Claude Code): il server non li persiste.
  */
 export function registerTools(server: McpServer) {
+  // Onboarding — il primo strumento che il prompt del sito fa chiamare: avvia
+  // l'intervista sulle priorità del 20 luglio e instrada verso il tool giusto.
+  registerOnboarding(server);
+
   // Skills (procedure codificate)
   registerProspettoAcconti(server); // S12 — il calcolatore del versamento
   registerEstraiDocumenti(server); // S7  — normalizza/valida i dati estratti
