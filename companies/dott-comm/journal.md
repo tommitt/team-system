@@ -31,6 +31,24 @@ Format:
   peak. Marketing angle ("we take the 20 luglio off your back") worth wiring into
   the landing page copy.
 
+## 2026-07-06 — Focus chapter: sealed the Tier-0 wedge + tools
+- **Did:** refined the 20/7 focus into an explicit **most-urgent minimum set**,
+  elevating the trivial-but-blocking upstream work the deadline forces (client-data
+  completeness checks + solleciti, and data import/extraction) ahead of the
+  calculator and comms drafter. Verified 2026 rateizzazione (max 7 rate to 16/12,
+  4% annual) and acconto (storico 100% RN34 split 40/60; previsionale 20% tolerance,
+  30% sanzione) with two targeted web checks.
+- **Changed:** [content/knowledge/problem-space.md](content/knowledge/problem-space.md)
+  — added a "Collect & verify inputs" + "Import & extract" step to the workload
+  list; replaced the flat 6-Skill list with **Tier 0 (wedge)** = completeness check,
+  import/extraction, prospetto calculator, comms drafter — plus a **Tools &
+  integrations** table separating zero/low-integration wedge tools (document
+  ingestion + messaging channel) from the Tier-1 deeper connectors (gestionale MCP,
+  Entratel, cassetto fiscale). Reframed the product note around the wedge→flywheel.
+- **Follow-ups:** Tier-0 chain (collect → extract → compute → communicate) is the
+  concrete build order; first target = the prospetto calculator with paste-in F24
+  input (Skill 2 depends on it). Consider an ADR to lock the wedge scope.
+
 ## 2026-07-06 — Marketing site ported to Next.js
 - **Did:** copy pass on the landing page (new headline "Lo studio del futuro
   grazie a [agent]", two-line subtitle, dropped the hero eyebrow, CTA copy
