@@ -33,7 +33,22 @@ links).
 
 ## 1. Vercel — deploy the app, get the domain
 
-- [ ] From `code/`: `vercel link` (create a new project) then `vercel deploy --prod`.
+The deployable app is **not at the repo root** — it lives at
+`companies/dott-comm/code/` (the group is a company-of-companies monorepo). So
+Vercel must be told where the project root is, or the build fails ("no
+framework detected" / missing `package.json`).
+
+- [ ] **Root Directory** (required, both paths below): set it to
+      `companies/dott-comm/code`. Leave "Include files outside the root
+      directory" **off** — the app is self-contained and imports nothing from
+      parent folders. Vercel then auto-detects Next.js and runs `next build`
+      from there.
+      - **GitHub auto-deploy** (the connected-repo path): Project → Settings →
+        Build & Deployment → **Root Directory** → Edit → `companies/dott-comm/code`.
+        This is the *only* way to relocate the root — a root `vercel.json`
+        cannot do it.
+      - **CLI**: run `vercel link` / `vercel deploy --prod` *from inside*
+        `companies/dott-comm/code/`, which sets the root for you.
 - [ ] Note the production domain, e.g. `https://dott-comm.vercel.app`. This
       determines three values used everywhere below:
       - `MCP_RESOURCE_URL` = `https://<domain>/api/mcp`

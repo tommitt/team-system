@@ -14,6 +14,20 @@ Format:
 
 ---
 
+## 2026-07-07 — Vercel: fissato il Root Directory per il monorepo
+- **Did:** collegato il repo GitHub a Vercel per i deploy automatici; fallivano
+  perché l'app non è alla root del repo ma in `companies/dott-comm/code/`
+  (monorepo company-of-companies). Fix: impostare **Root Directory** =
+  `companies/dott-comm/code` nelle impostazioni del progetto Vercel (Settings →
+  Build & Deployment). Confermato che un `vercel.json` alla root NON può
+  rilocare il root — è solo un'impostazione dashboard. Deploy poi riuscito.
+- **Changed:** riscritto lo step 1 (Vercel) di
+  [dev-setup-guide.md](content/knowledge/dev-setup-guide.md) con l'avviso "app
+  non alla root" e i due percorsi (GitHub auto-deploy via Root Directory; CLI da
+  dentro `code/`).
+- **Follow-ups:** nessuno; quando il dominio prod è definitivo, fissarlo nei doc
+  al posto degli esempi `dott-comm.vercel.app` (già annotato).
+
 ## 2026-07-07 — Track A: costruito il cuneo del 20 luglio (L1→S7→S12→L2)
 - **Did:** implementato e verificato end-to-end il cuneo del 20 luglio nel server
   MCP (`code/`): rules engine fiscale puro + 5 capability + 2 MCP prompt, a
