@@ -14,6 +14,35 @@ Format:
 
 ---
 
+## 2026-07-07 — Schema dichiarativo + migrazioni via Supabase CLI (fine del SQL editor a mano)
+- **Did:** risolto il problema devex "le migrazioni vanno incollate a mano nel SQL
+  editor di Supabase" e la mancanza di una fonte di verità per lo schema (per
+  sapere `increment_usage` bisognava rieseguire mentalmente 00001+00002). Scelta,
+  su modello SQLAlchemy+Alembic: **declarative schemas** della Supabase CLI —
+  `supabase/schemas/*.sql` come fonte di verità, migrazioni *derivate* con
+  `db diff`, applicate con `db push`. Gate di applicazione **manuale**, niente CI
+  per ora (scelta dell'utente). Scartati Drizzle/Prisma (ORM runtime non
+  giustificato per uno store di 4 tabelle vincolato dall'ADR 0003; plpgsql/RLS
+  sono nativi in SQL) e il runner fatto in casa.
+- **Changed:**
+  - Codice: `code/supabase/config.toml` + `schemas/01_billing.sql` +
+    `schemas/02_telemetry.sql` (end-state ricostruito dalle 3 migration, immutate);
+    `code/package.json` (CLI come devDependency + script `db:diff/push/new/lint/types`);
+    `code/lib/billing/database.types.ts` (tipi generati, seed a mano) e client
+    `code/lib/billing/supabase.ts` tipizzato `SupabaseClient<Database>` (+ fix del
+    tipo di `patch` in `store.ts`). `npm run test` verde (52), tsc pulito (a parte
+    artefatti stale in `.next/`).
+  - Brain: nuovo [ADR 0007](content/decisions/0007-declarative-schema-cli-migrations.md);
+    nuovo runbook [db-schema-migrations.md](content/knowledge/db-schema-migrations.md);
+    aggiornati [dev-setup-guide.md](content/knowledge/dev-setup-guide.md) e
+    [billing-setup.md](content/knowledge/billing-setup.md) (via SQL editor → CLI);
+    regola su schema-changes in `code/AGENTS.md`; indice `decisions/README.md`
+    (aggiunti anche 0004–0006 che mancavano).
+- **Follow-ups:** `supabase link` + **baseline** (`migration repair --status
+  applied 00001 00002 00003`) su dev e prod prima del primo `db push`; primo
+  `npm run db:types` su progetto collegato per canonicalizzare i tipi; **CI**
+  auto-apply su merge in main da valutare quando il flusso manuale sarà rodato.
+
 ## 2026-07-07 — Trial gate: da 50 totali a "50 upfront, poi 20/giorno"
 - **Did:** rivisto il paywall trial. Prima: cap fisso di 50 chiamate lifetime,
   poi blocco definitivo. Ora: le prime 50 (pool `TRIAL_TOOL_CALL_LIMIT`) restano

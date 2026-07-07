@@ -43,12 +43,14 @@ blocked with a friendly Italian message, never served unmetered.
 
 ## Relevant code (`companies/dott-comm/code/`)
 
-- `supabase/migrations/00001_users_billing.sql` — `users_billing` table
-  (RLS on, zero policies → service-role only) + `increment_usage()` RPC.
-- `supabase/migrations/00002_daily_usage.sql` — adds `daily_usage_count` /
-  `daily_usage_date` (Rome-local) and reworks `increment_usage()` to maintain
-  the per-day counter (reset when the stored date isn't today).
-- `lib/billing/supabase.ts` — service-role client singleton (`server-only`).
+- `supabase/schemas/01_billing.sql` — **declarative source of truth** for the
+  `users_billing` table (RLS on, zero policies → service-role only) + the current
+  `increment_usage()` RPC. Migrations are derived from it via `npm run db:diff`;
+  see [db-schema-migrations.md](./db-schema-migrations.md).
+- `supabase/migrations/0000{1,2}_*.sql` — derived history (`users_billing` +
+  `increment_usage`, then the daily-usage rework). Applied, not hand-edited.
+- `lib/billing/database.types.ts` — generated schema types (`npm run db:types`).
+- `lib/billing/supabase.ts` — typed service-role client singleton (`server-only`).
 - `lib/billing/gate.ts` — `checkAndRecordUsage`, pure `decide()` behavior
   matrix, `getBillingRow`.
 - `lib/billing/store.ts` — write helpers shared by checkout actions + webhook
@@ -85,9 +87,10 @@ blocked with a friendly Italian message, never served unmetered.
 
 ## Setup steps
 
-1. **Supabase**: create project → run the `supabase/migrations/*.sql` files in
-   order (`00001_users_billing.sql`, then `00002_daily_usage.sql`) in the SQL
-   Editor → copy `SUPABASE_URL` + service_role key.
+1. **Supabase**: create project → apply the schema with the CLI
+   (`npx supabase link` → baseline → `npm run db:push`; see
+   [db-schema-migrations.md](./db-schema-migrations.md)) → copy `SUPABASE_URL` +
+   service_role key.
 2. **Stripe (test mode)**: create Product + flat monthly Price → `STRIPE_PRICE_ID`;
    add webhook endpoint `https://<prod>/api/stripe/webhook` with events
    `checkout.session.completed`, `customer.subscription.updated`,

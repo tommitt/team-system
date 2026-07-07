@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:diff": "supabase db diff",
+    "db:push": "supabase db push",
+    "db:new": "supabase migration new",
+    "db:lint": "supabase db lint",
+    "db:types": "supabase gen types typescript --linked > lib/billing/database.types.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
@@ -28,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "supabase": "^2.109.1",
     "typescript": "^5",
     "vitest": "^3.2.0"
   }

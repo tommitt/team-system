@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "./supabase";
+import type { TablesUpdate } from "./database.types";
 import type { Plan } from "./gate";
 
 /**
@@ -61,7 +62,7 @@ export async function setPlanByStripeCustomer(
   plan: Plan,
   opts: { workosUserIdFallback?: string; clearSubscriptionId?: boolean } = {},
 ): Promise<boolean> {
-  const patch: Record<string, unknown> = {
+  const patch: TablesUpdate<"users_billing"> = {
     plan,
     updated_at: new Date().toISOString(),
   };

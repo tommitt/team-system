@@ -28,6 +28,10 @@ links).
       [Supabase](https://supabase.com), [Stripe](https://dashboard.stripe.com).
 - [ ] CLIs (local testing): `npm i -g vercel`, the
       [Stripe CLI](https://docs.stripe.com/stripe-cli) (`brew install stripe/stripe-cli/stripe`).
+      The **Supabase CLI** ships as a devDependency (`npx supabase`) — no global
+      install. For DB schema work you also need **Docker Desktop** running (the
+      migration diff engine uses a throwaway shadow DB); see
+      [db-schema-migrations.md](./db-schema-migrations.md).
 - [ ] Local env file: `cp code/.env.example code/.env.local` — you'll fill it
       in as you go. Keep `MCP_REQUIRE_AUTH=false` until the very last step.
 
@@ -81,9 +85,12 @@ so the user id matches across both.
 
 - [ ] Create a project (pick a region near the Vercel deployment; free tier is
       fine for now).
-- [ ] SQL Editor → paste and run
-      `code/supabase/migrations/00001_users_billing.sql` (creates
-      `users_billing` + the `increment_usage` RPC, RLS deny-all).
+- [ ] Apply the schema with the **Supabase CLI**, not the SQL Editor:
+      `npx supabase login` → `npx supabase link --project-ref <ref>` →
+      **baseline** the existing migrations
+      (`npx supabase migration repair --status applied 00001 00002 00003`,
+      one-time) → `npm run db:push`. Full procedure (and the schema/migration
+      workflow) in [db-schema-migrations.md](./db-schema-migrations.md).
 - [ ] Project Settings → API: copy the **Project URL** → `SUPABASE_URL` and
       the **service_role** key → `SUPABASE_SERVICE_ROLE_KEY`. (The anon key is
       never used; never expose the service key as `NEXT_PUBLIC_`.)

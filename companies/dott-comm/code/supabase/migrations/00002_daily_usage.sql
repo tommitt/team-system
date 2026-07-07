@@ -17,6 +17,10 @@ alter table public.users_billing
 -- Atomic lazy-provision + increment in one round trip, now maintaining both the
 -- lifetime counter and the per-day counter. Returns the NEW counts and current
 -- plan so the caller can gate without a second query.
+--
+-- The return type changes vs 00001 (adds daily_usage_count), and Postgres won't
+-- let CREATE OR REPLACE change a function's return type (42P13) — so drop first.
+drop function if exists public.increment_usage(text);
 create or replace function public.increment_usage(p_workos_user_id text)
 returns table (usage_count integer, daily_usage_count integer, plan text)
 language sql
