@@ -14,6 +14,29 @@ Format:
 
 ---
 
+## 2026-07-07 — Marketing: campagna crunch 20/7 + video ad "ninja commercialista"
+- **Did:** first comms/marketing exploration for Dott. Comm. Framed the two hard
+  constraints (2-week seasonal window to 20/7; product still mostly placeholder →
+  keep the ad's promise emotional, not specific). Established the audience insight
+  that decides everything — commercialisti are liability-bearing, data-paranoid and
+  peer-driven, so **peer proof beats polish** and a slick video from a no-follower
+  account reads as *more* suspicious. Ranked channels (referrals/peer proof #1;
+  community-seeded social; video ad; category infrastructure for next cycle). User
+  chose **video-ad-first, warm network second**; agreed to mine 2–3 real stressed
+  commercialisti as research so the ad doesn't read as AI slop.
+- **Changed:** new brainstorm
+  [content/brainstorms/marketing-crunch-20-luglio.md](content/brainstorms/marketing-crunch-20-luglio.md)
+  (audience insight, channel ranking, the "ninja commercialista" concept, decision).
+  A full Veo/Gemini production guide (`dottcomm-video-ad-guide.md`) was written to
+  the user's **Downloads folder — outside this repo**, so it's referenced but not
+  tracked here.
+- **Follow-ups:** distribution is unsolved (zero followers = ~zero organic reach →
+  needs small paid targeting on "Dottore Commercialista" + community seeding, budget
+  TBD); ensure dottcomm.dev doesn't contradict the ad's implied relief on click-through;
+  decide whether the video lands on a dedicated capture page vs the current homepage;
+  activate the warm network (research calls + outreach message) after the video. User
+  is generating the clips in Gemini now.
+
 ## 2026-07-07 — Dev setup guide: checklist unica per Vercel/WorkOS/Supabase/Stripe
 - **Did:** constatato che i passi manuali di setup erano sparsi tra due runbook
   (auth e billing) e che mancava del tutto la parte Vercel (progetto mai
