@@ -14,6 +14,35 @@ Format:
 
 ---
 
+## 2026-07-07 — Onboarding: connettore GUI dell'app Claude + prompt con auto-controllo
+- **Did:** chiarito come un utente **non tecnico** dell'**app desktop Claude**
+  attiva davvero DottComm. Ricerca su docs Anthropic + guida Claude Code: sul
+  desktop i server MCP remoti si aggiungono dalla **GUI Connettori**, non da un
+  prompt; **non esiste** un "Add to Claude" / deep-link web per i connettori
+  remoti personalizzati (solo la Connectors Directory, previa submission); la
+  scheda Code integrata usa un archivio config separato dalla chat. Rifatto il
+  flusso del sito di conseguenza.
+- **Changed:**
+  - Nuovo [ADR 0004](content/decisions/0004-onboarding-claude-connector-gui.md) —
+    installazione via connettore GUI (2 azioni: collega una volta, poi usa il
+    prompt in chat); alternative scartate (auto-install `claude mcp add`,
+    deep-link, bundle `.mcpb`).
+  - Aggiornata [content/knowledge/mcp-user-guide.md](content/knowledge/mcp-user-guide.md):
+    flusso concreto + → Connettori con URL reale `https://www.dottcomm.dev/api/mcp`,
+    nota su auto-controllo del prompt e caveat tenant AuthKit staging.
+  - Sito (`code/`): landing riscritta (rinominato "Claude Code" → **Claude**;
+    step 02 = collega il connettore con pulsante **Copia URL connettore** che
+    mostra l'URL con icona→spunta; step 03 = **Copia il prompt**; CTA hero/nav
+    ora **scrollano** a `#installazione`); `lib/prompt.ts` — `CONNECTOR_URL`
+    unica fonte + `AGENT_PROMPT` con **auto-controllo**: se gli strumenti
+    DottComm non ci sono, Claude si ferma e guida, senza inventare risposte
+    fiscali. Nuovi componenti `StartButton`, `CopyConnectorButton`.
+- **Follow-ups:** sostituire il tenant AuthKit **staging**
+  (`sensible-coral-42-staging.authkit.app`) con produzione prima del lancio;
+  valutare submission alla **Connectors Directory** per il vero one-click;
+  aggiungere screenshot alla guida utente; mantenere l'invariante
+  `CONNECTOR_URL == MCP_RESOURCE_URL`.
+
 ## 2026-07-07 — Vercel: fissato il Root Directory per il monorepo
 - **Did:** collegato il repo GitHub a Vercel per i deploy automatici; fallivano
   perché l'app non è alla root del repo ma in `companies/dott-comm/code/`

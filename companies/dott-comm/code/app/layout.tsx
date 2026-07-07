@@ -18,9 +18,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DottComm | Lo studio del futuro grazie a Claude Code",
+  title: "DottComm | Lo studio del futuro grazie a Claude",
   description:
-    "DottComm porta Claude Code nel tuo studio. Copia il prompt, incollalo, lavora.",
+    "DottComm porta Claude nel tuo studio. Collega il connettore, incolla il prompt, lavora.",
 };
 
 export default function RootLayout({

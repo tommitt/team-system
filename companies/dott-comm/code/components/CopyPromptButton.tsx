@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AGENT_PROMPT } from "@/lib/prompt";
 
-const DEFAULT_LABEL = "Copia il prompt e incollalo su Claude Code";
-const NAV_LABEL = "Copia per Claude Code";
+const DEFAULT_LABEL = "Copia il prompt e incollalo su Claude";
+const NAV_LABEL = "Copia il prompt";
 const COPIED_LABEL = "Copiato. Incolla ora.";
 
 function fallbackCopy(text: string) {

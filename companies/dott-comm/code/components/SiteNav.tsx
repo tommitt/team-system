@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CopyPromptButton } from "@/components/CopyPromptButton";
+import { StartButton } from "@/components/StartButton";
 
 /** Shared top nav used by the home page and the legal pages. */
 export function SiteNav() {
@@ -13,7 +13,7 @@ export function SiteNav() {
             Dott<b>Comm</b>
           </span>
         </Link>
-        <CopyPromptButton variant="nav" />
+        <StartButton variant="nav" />
       </div>
     </nav>
   );
