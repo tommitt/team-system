@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" fill="none">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- long sweeping curves: the sense of motion across the space -->
+    <path d="M-60 150 C 320 60, 460 330, 760 280 S 1180 210, 1500 300" stroke="#7c6bff" stroke-opacity="0.16" stroke-width="1.6"/>
+    <path d="M-60 600 C 300 660, 480 430, 780 470 S 1180 620, 1500 500" stroke="#6d5eff" stroke-opacity="0.16" stroke-width="1.6"/>
+    <path d="M180 -60 C 60 220, 300 420, 160 820" stroke="#8b7dff" stroke-opacity="0.14" stroke-width="1.5"/>
+    <path d="M1280 -60 C 1400 240, 1140 460, 1300 820" stroke="#8b7dff" stroke-opacity="0.14" stroke-width="1.5"/>
+
+    <!-- top-left: concentric rings + dots -->
+    <circle cx="210" cy="175" r="18" stroke="#5b4fff" stroke-opacity="0.30" stroke-width="1.4"/>
+    <circle cx="210" cy="175" r="34" stroke="#5b4fff" stroke-opacity="0.20" stroke-width="1.3"/>
+    <circle cx="210" cy="175" r="52" stroke="#5b4fff" stroke-opacity="0.12" stroke-width="1.2"/>
+    <circle cx="300" cy="110" r="4" fill="#5b4fff" fill-opacity="0.4"/>
+    <circle cx="120" cy="250" r="3" fill="#6d5eff" fill-opacity="0.35"/>
+
+    <!-- top-right: ring, plus, ticks, dots -->
+    <circle cx="1250" cy="150" r="30" stroke="#7c6bff" stroke-opacity="0.28" stroke-width="1.5"/>
+    <circle cx="1250" cy="150" r="3.5" fill="#7c6bff" fill-opacity="0.5"/>
+    <path d="M1120 96 v28 M1106 110 h28" stroke="#5b4fff" stroke-opacity="0.3" stroke-width="1.4"/>
+    <circle cx="1360" cy="250" r="4" fill="#6d5eff" fill-opacity="0.35"/>
+    <path d="M1180 300 l22 -14" stroke="#8b7dff" stroke-opacity="0.3" stroke-width="1.4"/>
+
+    <!-- bottom-left: arc, dashed line, triangle, dot -->
+    <path d="M120 600 A 96 96 0 0 1 312 632" stroke="#7c6bff" stroke-opacity="0.28" stroke-width="1.5"/>
+    <path d="M90 690 L360 660" stroke="#6d5eff" stroke-opacity="0.3" stroke-width="1.4" stroke-dasharray="1.5 9"/>
+    <path d="M240 700 L270 646 L300 700 Z" stroke="#5b4fff" stroke-opacity="0.2" stroke-width="1.3"/>
+    <circle cx="180" cy="540" r="4" fill="#5b4fff" fill-opacity="0.35"/>
+
+    <!-- bottom-right: ring pair, dashed arc, plus, dot -->
+    <circle cx="1270" cy="600" r="44" stroke="#5b4fff" stroke-opacity="0.2" stroke-width="1.4"/>
+    <circle cx="1270" cy="600" r="18" stroke="#5b4fff" stroke-opacity="0.3" stroke-width="1.4"/>
+    <path d="M1120 560 A 120 120 0 0 1 1330 520" stroke="#7c6bff" stroke-opacity="0.22" stroke-width="1.4" stroke-dasharray="1.5 9"/>
+    <path d="M1380 626 v28 M1366 640 h28" stroke="#7c6bff" stroke-opacity="0.28" stroke-width="1.3"/>
+    <circle cx="1120" cy="660" r="4" fill="#6d5eff" fill-opacity="0.35"/>
+  </g>
+</svg>

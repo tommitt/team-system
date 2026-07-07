@@ -14,6 +14,29 @@ Format:
 
 ---
 
+## 2026-07-06 — Legal pages (privacy + termini) & abstract violet hero/CTA
+- **Did:** wrote the two legal docs Stripe requires (Privacy Policy + Terms &
+  Conditions, in Italian, GDPR-shaped, single contact `info@dottcomm.dev`),
+  built them as real Next.js routes, and reworked the hero + closing CTA visuals.
+- **Changed:** added `code/legal/` (source-of-truth Markdown + a README telling
+  the deployer the pages are already wired and must go live before Stripe
+  checkout); new routes `code/app/privacy/page.tsx` and `code/app/termini/page.tsx`;
+  extracted `code/components/SiteNav.tsx` + `SiteFooter.tsx` (footer now carries
+  the legal links on every page) and refactored `code/app/page.tsx` to use them.
+- **Hero/CTA redesign (iterated with the user):** started from an oxygen-agent.com
+  reference and went through several rounds — animated CSS aurora → real snowy
+  landscape photo → naive hand-drawn violet mountains → **final: a clean, full-bleed
+  white hero and CTA with abstract violet line-art scattered at the edges.** The
+  old dark "stage" tiles are gone; both sections are now plain white with dark-ink
+  text. The decoration is one shared asset `code/public/deco.svg` (thin monoline
+  curves, concentric rings, dashed arcs, dots, ticks — no wobble filter), rendered
+  as a `.deco` layer that is radial-masked out of the center so text stays clean,
+  with a slow 30s drift disabled under `prefers-reduced-motion`.
+- **Follow-ups:** legal copy references paid plans / Stripe checkout but the site
+  is still a free "copy the prompt" page — keep pages live + registered in Stripe
+  before monetizing. **Not yet deployed to Vercel** (this session pushes to GitHub
+  for review only).
+
 ## 2026-07-06 — MCP server scaffold nell'app Next.js + auth WorkOS AuthKit
 - **Did:** deciso e realizzato dove vive il server MCP e come autentica. Serve
   l'MCP dallo stesso app Next.js del sito (route handler `mcp-handler`,
