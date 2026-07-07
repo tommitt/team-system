@@ -18,9 +18,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DottComm | Lo studio del futuro grazie a Claude",
+  title: "DottComm | Un agente AI che lavora davvero per il tuo studio",
   description:
-    "DottComm porta Claude nel tuo studio. Collega il connettore, incolla il prompt, lavora.",
+    "F24, solleciti, quadrature, comunicazioni: DottComm prepara il lavoro ripetitivo dello studio commercialista. Tu controlli, correggi e approvi.",
 };
 
 export default function RootLayout({

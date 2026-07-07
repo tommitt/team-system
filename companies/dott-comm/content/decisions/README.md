@@ -16,3 +16,4 @@ live in `group/content/decisions/` instead.
 | [0005](0005-paywall-signed-token-checkout.md) | Link paywall con token firmato → checkout senza re-login | accepted |
 | [0006](0006-telemetry-feedback-supabase.md) | Telemetria per-chiamata + feedback esplicito in Supabase — segnale di prodotto senza dati fiscali | accepted |
 | [0007](0007-declarative-schema-cli-migrations.md) | Schema dichiarativo + migrazioni via Supabase CLI (fine del SQL editor a mano) | accepted |
+| [0008](0008-listino-pubblico-packaging.md) | Listino pubblico e packaging: Free / Premium €98 / Su misura | accepted |

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /**
  * Primary CTA: scrolls to the installation steps (`#installazione`) instead of
  * copying anything. The actual copy-the-prompt action lives in step 03.
@@ -19,7 +21,7 @@ export function StartButton({ variant }: { variant: "nav" | "big" }) {
   }
 
   return (
-    <a
+    <Link
       className={`cta-btn ${variant === "big" ? "cta-btn--big" : "cta-btn--nav"}`}
       href="/#installazione"
       onClick={handleClick}
@@ -36,6 +38,6 @@ export function StartButton({ variant }: { variant: "nav" | "big" }) {
           />
         </svg>
       )}
-    </a>
+    </Link>
   );
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { StartButton } from "@/components/StartButton";
+import { ScrollLink } from "@/components/ScrollLink";
 
 /** Shared top nav used by the home page and the legal pages. */
 export function SiteNav() {
@@ -13,7 +14,15 @@ export function SiteNav() {
             Dott<b>Comm</b>
           </span>
         </Link>
-        <StartButton variant="nav" />
+        <div className="nav-links">
+          <ScrollLink targetId="usi" href="/#usi" className="nav-link">
+            Cosa fa
+          </ScrollLink>
+          <ScrollLink targetId="prezzi" href="/#prezzi" className="nav-link">
+            Prezzi
+          </ScrollLink>
+          <StartButton variant="nav" />
+        </div>
       </div>
     </nav>
   );

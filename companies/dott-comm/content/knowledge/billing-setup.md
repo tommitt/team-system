@@ -73,6 +73,22 @@ blocked with a friendly Italian message, never served unmetered.
 | `past_due` | allowed + fix-payment warning (Stripe is dunning) | subscription `past_due` |
 | `canceled` | blocked with reactivate message | subscription deleted / `canceled`/`unpaid`/`incomplete_expired` |
 
+## Public pricing (packaging)
+
+The public listino ([ADR 0008](../decisions/0008-listino-pubblico-packaging.md))
+maps onto the plan states above — it is **packaging, not a second mechanism**:
+
+| Public tier | Price | Plan state | Notes |
+|---|---|---|---|
+| **Free** | €0/mo | `trial` | The daily cap *is* the free tier (no separate free-forever code). 1 user, all tools, email support. |
+| **Premium** | **€98/mo** | `active` | The single `STRIPE_PRICE_ID`. 1 user, unlimited, priority support. |
+| **Su misura** | quote | — | Enterprise (multi-seat, SSO). Sales channel (`mailto:info@dottcomm.dev`), **no self-serve checkout code yet**. |
+
+Keep three places in sync when the price changes: the landing Prezzi section
+(`app/page.tsx`), ADR 0008, and the Stripe Price (`STRIPE_PRICE_ID`). The Free
+card's "utilizzo mensile limitato" copy is a commercial simplification of the
+real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
+
 ## Environment variables
 
 | Var | Purpose |

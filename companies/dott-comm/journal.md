@@ -14,6 +14,46 @@ Format:
 
 ---
 
+## 2026-07-07 — Redesign della landing page (import da Claude Design)
+- **Did:** implementato il redesign `DottComm.dc.html` importato dal progetto
+  Claude Design "DottComm website redesign" (via MCP `claude_design`). La landing
+  passa da una pagina snella (hero chiaro + 3 step + CTA) a una struttura completa:
+  hero scuro a due colonne con mockup chat fluttuante e stat card, griglia **6 casi
+  d'uso**, i 3 step invariati nella sostanza (step 2 a colonne invertite),
+  **testimonianze** (3), **prezzi** (Free / Premium €98 / Su misura, sezione scura),
+  **FAQ** ad accordion (6 voci) e closing CTA scura. Copy e sezioni fedeli al design.
+- **Changed:**
+  - Codice (nessun documento del brain): riscritti `code/app/page.tsx` e
+    `code/app/globals.css` (nuovi token dark: `--dark/--dark-2/--on-dark/--line-dark`,
+    `--claude`; content max-width 1120px); aggiornato `code/app/layout.tsx` (metadata)
+    e `code/components/SiteFooter.tsx` (layout a tre blocchi + link `/#usi`,`/#prezzi`).
+    Nuovi client component `code/components/ScrollLink.tsx` (smooth-scroll agli anchor)
+    e `code/components/FaqAccordion.tsx`. Riusati `CopyPromptButton`,
+    `CopyConnectorButton`, `AGENT_PROMPT`/`CONNECTOR_URL` da `lib/prompt.ts` (fonte
+    canonica del prompt — il design ne aveva una copia più corta, ignorata).
+  - Asset (`public/logo.svg`,`claude-logo.svg`,`deco.svg`) già identici al design:
+    nessuna modifica.
+  - Verificato: `next dev` compila pulito, home + `/privacy` + `/termini` HTTP 200,
+    screenshot headless di tutte le sezioni fedeli al mock.
+  - **Prezzi reali (non mock):** Free / Premium €98/mese / Su misura è il modello
+    effettivo. Documentato in [content/decisions/0008-listino-pubblico-packaging.md](content/decisions/0008-listino-pubblico-packaging.md)
+    (estende ADR 0002: Free = trial, Premium = stato `active`/`STRIPE_PRICE_ID`,
+    Su misura = vendita) + sezione "Public pricing" in
+    [content/knowledge/billing-setup.md](content/knowledge/billing-setup.md).
+  - **Lint:** corretto `code/components/StartButton.tsx` (`<a href="/#…">` → `<Link>`,
+    regola `no-html-link-for-pages`); `eslint app components` ora pulito.
+  - **Bugfix footer:** i link "Cosa fa"/"Prezzi" del footer erano `<Link href="/#…">`
+    puri → funzionavano solo al primo click (col hash già in URL il browser non
+    riscrolla). Ora usano `ScrollLink`, che fa `scrollIntoView` a ogni click (stesso
+    meccanismo dei bottoni della pagina). `ScrollLink` ora renderizza un `<Link>`
+    (fallback client-side cross-pagina + niente warning lint).
+  - **Nav:** aggiunti link testuali "Cosa fa" (#usi) e "Prezzi" (#prezzi) nel
+    `SiteNav` — testo discreto, non bottoni outline, così l'unica CTA piena resta
+    dominante; nascosti sotto 640px.
+- **Follow-ups:** copy testimonianze ancora illustrativa (nessun utente reale).
+  Su misura senza percorso self-serve (canale commerciale). Se il prezzo cambia,
+  tenere in sync landing + ADR 0008 + `STRIPE_PRICE_ID`.
+
 ## 2026-07-07 — Schema dichiarativo + migrazioni via Supabase CLI (fine del SQL editor a mano)
 - **Did:** risolto il problema devex "le migrazioni vanno incollate a mano nel SQL
   editor di Supabase" e la mancanza di una fonte di verità per lo schema (per
