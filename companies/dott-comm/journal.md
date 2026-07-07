@@ -14,6 +14,25 @@ Format:
 
 ---
 
+## 2026-07-06 — Ricerca: gestionali per studi commercialisti e API
+- **Did:** ricerca approfondita (fan-out + verifica avversariale) su quali
+  gestionali usano di più gli studi commercialisti in Italia e quali espongono
+  API pubbliche utilizzabili per un MCP; poi integrata con un MCP open source
+  già esistente segnalato dall'utente.
+- **Changed:** nuovo brainstorm
+  `content/brainstorms/gestionali-mercato-e-api.md`; aggiornata la open
+  question sulle API in `content/brainstorms/catalogo-skills-tools.md`.
+- **Trovato:** nessuna fonte pubblica con quote di mercato esatte. Fatture in
+  Cloud (gruppo TeamSystem) ha API pubbliche solide (v2 REST + SDK) e un MCP
+  open source già funzionante ([aringad/fattureincloud-mcp](https://github.com/aringad/fattureincloud-mcp),
+  23 tool, MIT); TeamSystem Studio, Zucchetti Ago/Infinity, Passepartout,
+  Sistemi STUDIO non hanno API pubbliche (o non sono verificabili
+  pubblicamente).
+- **Follow-ups:** valutare fork/riuso di `fattureincloud-mcp` per T2 invece di
+  costruire da zero; verificare `development.teamsystem.com` con richiesta
+  diretta al vendor; approfondire Wolters Kluwer/Buffetti/Namirial/Datalog se
+  emergono come gestionale prevalente in uno studio pilota.
+
 ## 2026-07-06 — Marketing landing page, first draft
 - **Did:** drafted the public landing page (single self-contained `index.html`):
   hero with a rotating-name headline (Claude Code / Codex / Hermes / OpenClaw),
