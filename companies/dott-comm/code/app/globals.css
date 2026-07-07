@@ -70,40 +70,52 @@ nav {
 .logo-word { font-family: var(--display); font-weight: 600; font-size: 17.5px; letter-spacing: -0.01em; color: var(--ink); }
 .logo-word b { color: var(--violet); font-weight: 600; }
 
-/* ---------- STAGE (shared dark panel look) ---------- */
-.stage-wrap { padding: clamp(20px, 3vw, 32px) var(--pad) 0; }
-.stage {
-  max-width: var(--content); margin: 0 auto; border-radius: 28px;
-  background: #100f1c;
+/* ---------- HERO: full-bleed, white, with scattered abstract shapes ---------- */
+.hero-full {
   position: relative; overflow: hidden;
-  isolation: isolate;
+  padding: clamp(84px, 13vw, 152px) var(--pad) clamp(84px, 13vw, 152px);
 }
-.stage::before {
-  content: ""; position: absolute; inset: 0; z-index: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1.5px);
-  background-size: 24px 24px;
-  -webkit-mask-image: radial-gradient(70% 70% at 50% 30%, #000 30%, transparent 78%);
-          mask-image: radial-gradient(70% 70% at 50% 30%, #000 30%, transparent 78%);
+.hero-inner {
+  position: relative; z-index: 1;
+  max-width: var(--content); margin: 0 auto; text-align: center;
 }
-.stage::after {
-  content: ""; position: absolute; z-index: 0; pointer-events: none;
-  width: 640px; height: 640px; top: -280px; left: 50%; transform: translateX(-50%);
-  background: radial-gradient(closest-side, rgba(91,79,255,0.35), transparent 72%);
-}
-.stage-content { position: relative; z-index: 1; }
 
-/* ---------- HERO ---------- */
-.hero { padding: clamp(64px, 11vw, 116px) clamp(24px, 6vw, 64px) clamp(56px, 9vw, 92px); text-align: center; }
+/* ---------- ABSTRACT DECORATION (shared by hero + CTA) ---------- */
+/* full-cover shapes, faded out of the middle so the center stays clean,
+   with a slow drift so the space feels alive */
+.deco {
+  position: absolute; inset: -60px; z-index: 0; pointer-events: none;
+  background: url("/deco.svg") center / cover no-repeat;
+  -webkit-mask-image: radial-gradient(112% 88% at 50% 50%, transparent 0%, transparent 33%, #000 70%);
+          mask-image: radial-gradient(112% 88% at 50% 50%, transparent 0%, transparent 33%, #000 70%);
+  animation: deco-drift 30s ease-in-out infinite alternate;
+}
+@keyframes deco-drift {
+  from { transform: translate3d(-7px, -5px, 0); }
+  to   { transform: translate3d(7px, 5px, 0); }
+}
+
+/* ---------- CTA SECTION (white, scattered shapes — replaces the old dark tile) ---------- */
+.cta-full {
+  position: relative; overflow: hidden;
+  margin-top: clamp(28px, 5vw, 56px);
+  padding: clamp(72px, 10vw, 120px) var(--pad);
+  border-top: 1px solid var(--line);
+}
+.cta-inner { position: relative; z-index: 1; max-width: var(--content); margin: 0 auto; text-align: center; }
+.cta-inner h2 { color: var(--ink); font-size: clamp(30px, 4vw, 46px); margin-bottom: 34px; }
+
+/* ---------- HERO TEXT ---------- */
 h1.hero-title {
   font-size: clamp(36px, 6vw, 68px);
-  line-height: 1.08; color: #fff; margin: 0 auto 24px;
+  line-height: 1.08; color: var(--ink); margin: 0 auto 24px;
 }
 .hero-title .line1 { display: block; white-space: nowrap; }
 .hero-title .line2 { display: block; margin-top: 4px; }
 
 .hero-agent { color: #d97757; font-weight: 700; }
 
-p.subtitle { font-family: var(--body); font-size: clamp(16.5px, 1.8vw, 19px); color: rgba(255,255,255,0.62); max-width: 46ch; margin: 0 auto 40px; line-height: 1.6; }
+p.subtitle { font-family: var(--body); font-size: clamp(16.5px, 1.8vw, 19px); color: var(--muted); max-width: 46ch; margin: 0 auto 40px; line-height: 1.6; }
 
 .hero-cta-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 
@@ -214,14 +226,12 @@ a.step-visual-link:hover .mock-url { color: var(--violet-deep); border-color: rg
   .hero-title .line1 { white-space: normal; }
 }
 
-/* ---------- CLOSING ---------- */
-.closing-wrap { padding: 0 var(--pad) clamp(64px, 8vw, 96px); }
-.closing-pad { padding: clamp(64px, 9vw, 96px) clamp(24px, 6vw, 64px); text-align: center; }
-.closing-pad h2 { color: #fff; font-size: clamp(30px, 4vw, 46px); margin-bottom: 34px; }
-
 /* ---------- FOOTER ---------- */
 footer { padding: clamp(36px, 5vw, 56px) var(--pad); text-align: center; }
-.footer-inner { max-width: var(--content); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.footer-inner { max-width: var(--content); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.footer-links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 13.5px; }
+.footer-links a { color: var(--muted); }
+.footer-links a:hover { color: var(--ink); }
 .footer-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; font-size: 13.5px; color: var(--muted); }
 .footer-meta a:hover { color: var(--ink); }
 
@@ -251,8 +261,28 @@ footer { padding: clamp(36px, 5vw, 56px) var(--pad); text-align: center; }
   background: rgba(91, 79, 255, 0.1); color: var(--violet);
 }
 
+/* ---------- LEGAL PAGES (privacy / termini) ---------- */
+.legal-main { padding: clamp(52px, 8vw, 96px) var(--pad) clamp(48px, 7vw, 80px); }
+.legal { max-width: 720px; margin: 0 auto; }
+.legal-updated { color: var(--violet); display: block; margin-bottom: 14px; }
+.legal h1 { font-size: clamp(30px, 5vw, 46px); margin-bottom: 10px; }
+.legal .legal-intro { font-size: clamp(16px, 1.7vw, 18px); color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
+.legal h2 { font-family: var(--display); color: var(--ink); font-size: clamp(19px, 2.2vw, 23px); font-weight: 600; letter-spacing: -0.01em; margin: 40px 0 12px; }
+.legal p { color: var(--muted); line-height: 1.72; margin-bottom: 14px; }
+.legal ul { color: var(--muted); line-height: 1.7; margin: 0 0 14px; padding-left: 22px; }
+.legal li { margin-bottom: 7px; }
+.legal a { color: var(--violet-deep); text-decoration: underline; text-decoration-color: rgba(91,79,255,0.35); text-underline-offset: 2px; }
+.legal a:hover { text-decoration-color: var(--violet-deep); }
+.legal strong { color: var(--ink); font-weight: 600; }
+.legal-table-wrap { overflow-x: auto; margin: 0 0 16px; }
+.legal-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.legal-table th, .legal-table td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.legal-table th { color: var(--ink); font-weight: 600; font-family: var(--body); }
+.legal-table td { color: var(--muted); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .cta-btn:hover { transform: none; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .deco { animation: none; }
 }

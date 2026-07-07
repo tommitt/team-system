@@ -1,45 +1,34 @@
 import Image from "next/image";
 import { CopyPromptButton } from "@/components/CopyPromptButton";
 import { ScrollRevealInit } from "@/components/ScrollRevealInit";
+import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function Home() {
   return (
     <>
       <ScrollRevealInit />
 
-      <nav>
-        <div className="nav-inner">
-          <a className="logo" href="#">
-            <Image src="/logo.svg" alt="DottComm" width={27} height={27} priority />
-            <span className="logo-word">
-              Dott<b>Comm</b>
-            </span>
-          </a>
-          <CopyPromptButton variant="nav" />
-        </div>
-      </nav>
+      <SiteNav />
 
-      <div className="stage-wrap">
-        <div className="stage">
-          <div className="stage-content">
-            <header className="hero">
-              <h1 className="hero-title">
-                <span className="line1">Lo studio del futuro grazie a</span>
-                <span className="line2 hero-agent">Claude Code</span>
-              </h1>
-              <p className="subtitle">
-                Un agente che lavora davvero per il tuo studio.
-                <br />
-                Tu resti sempre al comando.
-              </p>
+      <header className="hero-full">
+        <div className="deco" aria-hidden="true" />
+        <div className="hero-inner">
+          <h1 className="hero-title">
+            <span className="line1">Lo studio del futuro grazie a</span>
+            <span className="line2 hero-agent">Claude Code</span>
+          </h1>
+          <p className="subtitle">
+            Un agente che lavora davvero per il tuo studio.
+            <br />
+            Tu resti sempre al comando.
+          </p>
 
-              <div className="hero-cta-wrap">
-                <CopyPromptButton variant="big" />
-              </div>
-            </header>
+          <div className="hero-cta-wrap">
+            <CopyPromptButton variant="big" />
           </div>
         </div>
-      </div>
+      </header>
 
       <section className="steps-section">
         <div className="steps-inner">
@@ -164,25 +153,15 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="closing-wrap">
-        <div className="stage">
-          <div className="stage-content">
-            <section className="closing-pad" id="cta">
-              <h2>Aumenta il tuo studio con l&apos;AI</h2>
-              <CopyPromptButton variant="big" />
-            </section>
-          </div>
+      <section className="cta-full" id="cta">
+        <div className="deco" aria-hidden="true" />
+        <div className="cta-inner">
+          <h2>Aumenta il tuo studio con l&apos;AI</h2>
+          <CopyPromptButton variant="big" />
         </div>
-      </div>
+      </section>
 
-      <footer>
-        <div className="footer-inner">
-          <div className="footer-meta">
-            <span>© 2026 DottComm</span>
-            <a href="mailto:info@dottcomm.dev">info@dottcomm.dev</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
