@@ -75,7 +75,22 @@ const verifyToken = async (
       extra: { userId: payload.sub },
     };
   } catch (err) {
-    console.warn("MCP token verification failed:", err);
+    // Log the mismatch explicitly: the most common cause is the token's `aud`
+    // or `iss` not matching what we expect (domain/path drift between the
+    // metadata resource, MCP_RESOURCE_URL, and the WorkOS Resource Indicator).
+    // Decode without verifying just to surface the claims — never trust these.
+    let claims: unknown;
+    try {
+      claims = JSON.parse(
+        Buffer.from(bearerToken.split(".")[1] ?? "", "base64url").toString(),
+      );
+    } catch {
+      claims = "<unparseable JWT payload>";
+    }
+    console.warn("MCP token verification failed:", (err as Error)?.message, {
+      expected: { issuer: authkitDomain, audience },
+      tokenClaims: claims,
+    });
     return undefined;
   }
 };
