@@ -14,6 +14,23 @@ Format:
 
 ---
 
+## 2026-07-06 — Focus chapter: the 20 luglio 2026 versamenti crunch
+- **Did:** added a time-bound focus to the problem space: D.L. 89/2026 prorogated
+  saldo 2025 + primo acconto 2026 to 20/7/2026 (20/8 with +0,80%) for soggetti ISA,
+  forfettari, and soci of trasparenza entities — a two-week, portfolio-wide crunch
+  happening right now. Rules verified with a single web check as agreed (the rest
+  of the doc stays knowledge-based).
+- **Changed:** appended the "Focus — La corsa al 20 luglio 2026" chapter to
+  [content/knowledge/problem-space.md](content/knowledge/problem-space.md): the
+  event, why it crushes studios, and six priority Agent Skills ranked (perimeter
+  classifier, campaign orchestrator on the scadenzario, F24 builder & dispatch
+  loop, acconto/rateizzazione simulator, first-line question deflector,
+  late-payer recovery).
+- **Follow-ups:** the six Skills are the seed of the build-order ranking; the same
+  campaign engine re-parameterizes for 30/11 secondo acconto and every versamenti
+  peak. Marketing angle ("we take the 20 luglio off your back") worth wiring into
+  the landing page copy.
+
 ## 2026-07-06 — Marketing site ported to Next.js
 - **Did:** copy pass on the landing page (new headline "Lo studio del futuro
   grazie a [agent]", two-line subtitle, dropped the hero eyebrow, CTA copy

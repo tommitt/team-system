@@ -53,6 +53,7 @@ This is groundwork for building an Agent with specific Skills and MCPs that auto
 | 08 | Gestione dello studio | The studio as a business: scadenzario, antiriciclaggio, mandati, deleghe, fatturazione |
 | 09 | Relazione con il cliente | Onboarding, document chasing, scadenze communication, the daily question stream |
 | 10 | Il ritmo del tempo | Giornata tipo, mese tipo, anno tipo — how all of the above lands on the calendar |
+| F | Focus — La corsa al 20 luglio 2026 | The live versamenti crunch for partite IVA, and the priority Agent Skills it demands |
 
 ## Boundary: Lavoro e paghe
 
@@ -1364,3 +1365,48 @@ Quarterly overlay (Jan/Apr/Jul/Oct → LIPE and trimestrale liquidations; bollo 
 - The month's 1–16 arc (close → liquidate → notify → pay → confirm) is the tightest recurring loop and the natural first end-to-end automation target.
 - Seasonality implies **campaign patterns** (CU batch, document harvest, bilanci choreography, dichiarativi pipeline) — agent workflows should be modeled as campaigns over the client portfolio, not just as single-client tasks.
 
+
+---
+
+## Focus — La corsa al 20 luglio 2026: il crunch dei versamenti per le partite IVA
+
+_Added 2026-07-06. Unlike the rest of this file, this chapter's dates were verified against live 2026 sources (D.L. 22 maggio 2026, n. 89, art. 6) — it describes a real, currently-running deadline event._
+
+### The event
+
+With **D.L. 89/2026**, the deadline for the **saldo imposte 2025 + primo acconto 2026** was prorogated from 30/6 to **20 luglio 2026** — without maggiorazione — for the categories that make up the bulk of every studio's client base:
+
+- **Soggetti ISA** (imprese e professionisti with approved Indici Sintetici di Affidabilità);
+- **Forfettari** and **regime di vantaggio**;
+- **Soci of trasparenza entities** (artt. 5, 115, 116 TUIR — snc, sas, associazioni professionali, srl trasparenti), who inherit the proroga personally.
+
+A second window runs to **20 agosto 2026 with +0,80%** maggiorazione. Everyone outside the perimeter (dipendenti/pensionati with 730-related payments, non-ISA companies) stayed on the ordinary 30/6 (or 30/7 +0,4%) track.
+
+The scope of what must be paid by 20/7 is wide: **IRPEF/IRES/IRAP saldo e primo acconto, imposta sostitutiva dei forfettari, cedolare secca, IVIE/IVAFE, saldo IVA 2025** (if deferred to the redditi deadline), **contributi previdenziali INPS eccedenti il minimale, diritto camerale**.
+
+### Why this is a studio-crushing moment
+
+The proroga concentrates, into two working weeks of July, a workload that is *per-client* and *cannot start early* for many clients (you can't finalize imposte until the client's dichiarativo data is complete):
+
+1. **Compute** — for every partita IVA client: finalize the quadro d'impresa/lavoro autonomo, run ISA, compute saldo + acconti, compute contributi INPS a conguaglio (gestione separata / artigiani e commercianti eccedenze), decide rateizzazione.
+2. **Decide** — the two judgment moments: **acconto storico vs previsionale** (clients whose 2026 is going worse want to pay less now — a liability-sensitive call) and **ISA adeguamento**.
+3. **Communicate** — every client must receive amounts, F24s, rate plans, and explanations — then actually pay ("pagato?" ping-pong; addebito mandates to verify).
+4. **Absorb the panic** — the question wave peaks exactly now: "quanto pagherò?", "posso rateizzare?", "e se non pago?", "rientro nella proroga?" — multiplied across the whole portfolio, in the same days.
+5. **Handle the can't-pays** — clients without liquidity need rate plans, the 20/8 +0,80% assessment, or a ravvedimento strategy — each a mini-consultation.
+
+Cross-references: the mechanics live in chapter 02 (*Calcolo imposte, acconti e F24*, *ISA*, *Redditi PF/SP/SC*), the judgment in 04 (*tax planning*), the communication loops in 09, the orchestration in 08 (*scadenzario*). The July peak was already visible in chapter 10's anno tipo; D.L. 89/2026 made 2026's version sharper by moving the mountain to a single date.
+
+### The priority Agent Skills for this crunch
+
+Ranked by (impact on the crunch) × (feasibility given the Natura of the activity). The first four together cover the bulk of the mechanical load.
+
+1. **Perimeter classifier** — for every client, determine the applicable deadline track: ISA subject? forfettario? socio of a trasparenza entity? → 20/7 vs 30/6-already-passed vs 20/8 +0,80%. Pure rule-based classification from data the studio already holds (regime, codice ATECO/ISA approval, participation links). This is the campaign's foundation: today it's done by memory and grep-by-eye across the portfolio, and errors are expensive in both directions.
+2. **Campaign orchestrator on the scadenzario** — explode the deadline into a per-client pipeline (dati completi → imposte calcolate → decisione acconti → F24 pronto → inviato → pagato/addebitato → quietanza) and surface the studio-level board: who is stuck at which stage, what's at risk with N days left. The single highest-leverage view for a titolare in the next two weeks; every other Skill reports into it. Needs: gestionale/scadenzario integration (MCP), status persistence.
+3. **F24 builder & dispatch loop** — generate the F24s (saldo, acconto, contributi, diritto camerale; rateizzazione splits with interest; compensazione checks against available credits), deliver per client preference (Entratel addebito vs send-to-client), then run the notify → remind → confirm → verify-quietanza loop automatically. Covers steps 3 of the crunch end-to-end; ~95% rule-based today done by hand at portfolio scale. Needs: gestionale + Entratel/F24 channel (MCP) + client messaging channel.
+4. **Acconto & rateizzazione simulator** — for each client, compute the options as a clean comparison: storico vs previsionale (with the sanction risk of under-previsionale made explicit), pay-in-full 20/7 vs rate plan vs 20/8 +0,80% — producing a one-page client-readable prospetto the professional can approve and forward. The decision stays human; the Skill removes the per-client Excel session that consumes professional hours precisely when there are none.
+5. **First-line question deflector** — answer the panic wave ("rientro nella proroga?", "quanto pago?", "posso rateizzare?") from the client's own computed data + the D.L. 89/2026 rules, in draft-for-approval mode (the professional reviews before it goes out, preserving liability boundaries). Directly attacks the interrupt load that makes the peak unbearable (chapter 09's spot-question stream at maximum intensity).
+6. **Late-payer recovery Skill** — after 20/7 and 20/8: detect unpaid F24s from quietanze/cassetto fiscale, compute ravvedimento operoso (sanzioni ridotte per delay bracket + interessi), generate the corrective F24, notify. Turns the crunch's aftermath — today a trickle of small emergencies through September — into a batch process.
+
+### Product note
+
+This event is a template, not a one-off: the same six Skills, re-parameterized, serve every versamenti peak (30/11 secondo acconto with the same previsionale decision; next year's saldo/acconto round; the 16-of-the-month cycle in miniature). Building for the 20 luglio 2026 crunch means building the studio's **campaign engine** — the profession's recurring shape of stress (see chapter 10: value concentrates in peak-shaving). The marketing moment is equally real: commercialisti are living this pain *right now*, and "we take the 20 luglio off your back" is a pitch that needs no explanation.
