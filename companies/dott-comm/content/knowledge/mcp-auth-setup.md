@@ -2,7 +2,7 @@
 title: MCP server — auth setup (WorkOS AuthKit) for developers
 status: active
 owner: ttassi
-updated: 2026-07-06
+updated: 2026-07-07
 tags: [mcp, auth, oauth, workos, vercel, engineering, runbook]
 ---
 
@@ -11,6 +11,9 @@ tags: [mcp, auth, oauth, workos, vercel, engineering, runbook]
 How the Dott. Comm. MCP server authenticates clients, and the steps to turn auth
 on. Decision context: [ADR 0001](../decisions/0001-mcp-in-nextjs-app-workos-auth.md).
 For the end-user "how do I connect" guide, see [mcp-user-guide.md](./mcp-user-guide.md).
+The billing/paywall layer that sits on top of this auth: [billing-setup.md](./billing-setup.md).
+Setting up from scratch? Follow the ordered checklist in
+[dev-setup-guide.md](./dev-setup-guide.md) — this doc is the auth deep dive.
 
 ## How it works
 

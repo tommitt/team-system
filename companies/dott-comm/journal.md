@@ -14,6 +14,59 @@ Format:
 
 ---
 
+## 2026-07-07 — Dev setup guide: checklist unica per Vercel/WorkOS/Supabase/Stripe
+- **Did:** constatato che i passi manuali di setup erano sparsi tra due runbook
+  (auth e billing) e che mancava del tutto la parte Vercel (progetto mai
+  linkato, `.vercel/` assente): consolidata una guida dev unica, ordinata come
+  checklist — prima Vercel perché il dominio di produzione determina audience
+  del token, redirect URI, webhook URL e link di upgrade — con tabella env
+  finale, verifica end-to-end e una sezione "when something breaks".
+- **Changed:** nuovo [dev-setup-guide.md](content/knowledge/dev-setup-guide.md);
+  cross-link (e bump `updated:`) in
+  [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md) e
+  [billing-setup.md](content/knowledge/billing-setup.md), che restano i deep
+  dive per layer.
+- **Follow-ups:** eseguire davvero la checklist (è il lavoro esterno rimasto
+  dalla sessione paywall); quando il dominio prod è definitivo, fissarlo nei
+  doc al posto degli esempi `dott-comm.vercel.app`.
+
+## 2026-07-06 — Paywall MCP: gate Supabase a consumo + Stripe
+- **Did:** progettato e costruito il layer di monetizzazione dell'MCP. Identità
+  in WorkOS, soldi in Stripe, entitlement + contatore d'uso in Supabase; prova
+  gratuita a **numero di tool call** (default 50, `TRIAL_TOOL_CALL_LIMIT`); a
+  limite raggiunto le tool call rispondono in-band con messaggio di upgrade +
+  link (mai 401/403); piano pagato = abbonamento mensile flat illimitato. Il
+  gate legge il DB a ogni chiamata, così il webhook Stripe sblocca la chiamata
+  successiva. Fail closed su errori DB. Leg di pagamento sul sito: `/upgrade`
+  con sessione AuthKit (stesso env WorkOS → stesso user id) → Stripe Checkout;
+  `/account` → Customer Portal.
+- **Changed:**
+  - Decisione: [ADR 0002](content/decisions/0002-billing-supabase-stripe-usage-trial.md) (accepted).
+  - Codice (`code/`): `supabase/migrations/00001_users_billing.sql` (tabella +
+    RPC `increment_usage` atomica), `lib/billing/{supabase,gate,store}.ts`,
+    `lib/mcp/tools.ts` (wrapper `registerGatedTool`), `proxy.ts` (AuthKit,
+    matcher allowlist), `app/auth/callback/route.ts`,
+    `app/upgrade/{page,actions,success/page}`, `app/account/page.tsx`,
+    `lib/stripe.ts`, `app/api/stripe/webhook/route.ts`, CSS billing in
+    `globals.css`, `components/BillingShell.tsx`, `.env.example`; dipendenze
+    `@supabase/supabase-js`, `stripe`, `@workos-inc/authkit-nextjs`, `server-only`.
+  - Knowledge: nuovo [billing-setup.md](content/knowledge/billing-setup.md)
+    (runbook + gotchas); cross-link in [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md).
+  - Convenzione billing aggiunta al [CLAUDE.md](CLAUDE.md) di scope (nuovi tool
+    → sempre via `registerGatedTool`).
+- **Verificato:** `next build` + lint puliti; fail-closed reale (Supabase
+  irraggiungibile → messaggio cortese, tool non eseguito); path dev ungated OK;
+  proxy NON intercetta `/api/mcp` né `/.well-known/*`; `/account` da sloggato →
+  307 all'authorize WorkOS con PKCE; webhook con firma finta → 400;
+  `/upgrade/success` statica OK. Gotcha Next 16/authkit 4.x scoperto e risolto:
+  `getSignInUrl`/`ensureSignedIn` scrivono un cookie PKCE → vietati nel render;
+  sign-in via server action e protezione via `middlewareAuth` del proxy.
+- **Follow-ups:** setup esterno da fare a mano — progetto Supabase (+ eseguire
+  la migration), prodotto/prezzo + webhook + Customer Portal su Stripe (test
+  mode), redirect URI su WorkOS, env su Vercel. Poi il test end-to-end
+  pagamenti con `stripe listen` + carta 4242 (passi in billing-setup.md).
+  Contatore mensile/cap sul piano pagato se il pricing evolve.
+
 ## 2026-07-06 — MCP server scaffold nell'app Next.js + auth WorkOS AuthKit
 - **Did:** deciso e realizzato dove vive il server MCP e come autentica. Serve
   l'MCP dallo stesso app Next.js del sito (route handler `mcp-handler`,

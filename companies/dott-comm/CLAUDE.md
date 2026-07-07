@@ -35,6 +35,11 @@ which are tractable with AI, before committing to what to build first.
   [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md). Note: this Next.js
   (16.x) has breaking changes — read `code/AGENTS.md` and the bundled docs in
   `node_modules/next/dist/docs/` before writing app code.
+- **Billing.** Identity in WorkOS, money in Stripe, entitlement + usage in
+  Supabase; free trial = tool-call count; new MCP tools MUST register through
+  `registerGatedTool` (`code/lib/mcp/tools.ts`) so they're metered. See
+  [ADR 0002](content/decisions/0002-billing-supabase-stripe-usage-trial.md) and
+  [billing-setup.md](content/knowledge/billing-setup.md).
 
 ## Closing the loop
 

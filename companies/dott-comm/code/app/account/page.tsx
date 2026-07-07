@@ -1,0 +1,74 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { withAuth } from "@workos-inc/authkit-nextjs";
+import { BillingShell } from "@/components/BillingShell";
+import { getBillingRow, getTrialLimit, type Plan } from "@/lib/billing/gate";
+import { openCustomerPortal } from "../upgrade/actions";
+
+export const metadata = { title: "Account — DottComm" };
+
+const PLAN_LABELS: Record<Plan, string> = {
+  trial: "Prova gratuita",
+  active: "Abbonamento attivo",
+  past_due: "Pagamento non riuscito",
+  canceled: "Abbonamento non attivo",
+};
+
+export default async function AccountPage() {
+  // The proxy's middlewareAuth redirects signed-out visitors to AuthKit before
+  // this renders; the redirect below is only a belt-and-braces fallback
+  // (ensureSignedIn would try to set a PKCE cookie, illegal during render).
+  const { user } = await withAuth();
+  if (!user) redirect("/upgrade");
+
+  const row = await getBillingRow(user.id);
+  const plan: Plan = row?.plan ?? "trial";
+  const usage = row?.usage_count ?? 0;
+  const limit = getTrialLimit();
+
+  return (
+    <BillingShell>
+      <span className="mono steps-kicker">account</span>
+      <h1>Il tuo account</h1>
+      <p className="billing-lede">
+        Stato del piano e utilizzo degli strumenti DottComm.
+      </p>
+
+      <div className="billing-card">
+        <div className="billing-row">
+          <dt>Account</dt>
+          <dd>{user.email}</dd>
+        </div>
+        <div className="billing-row">
+          <dt>Piano</dt>
+          <dd>
+            <span className="billing-plan-badge">{PLAN_LABELS[plan]}</span>
+          </dd>
+        </div>
+        <div className="billing-row">
+          <dt>Chiamate effettuate</dt>
+          <dd>
+            {plan === "trial" ? `${Math.min(usage, limit)}/${limit}` : usage}
+          </dd>
+        </div>
+
+        {row?.stripe_customer_id ? (
+          <form className="billing-cta-form" action={openCustomerPortal}>
+            <button className="cta-btn cta-btn--big" type="submit">
+              Gestisci abbonamento
+            </button>
+            <span className="billing-note">
+              Fatture, metodo di pagamento e disdetta nel portale sicuro Stripe.
+            </span>
+          </form>
+        ) : (
+          <div className="billing-cta-form">
+            <Link className="cta-btn cta-btn--big" href="/upgrade">
+              Attiva l&apos;abbonamento
+            </Link>
+          </div>
+        )}
+      </div>
+    </BillingShell>
+  );
+}
