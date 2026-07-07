@@ -23,7 +23,11 @@ which are tractable with AI, before committing to what to build first.
 
 ## Company-specific conventions
 
-_None yet — add them here as they emerge (naming, clients, tone, stack)._
+- **It's the autonomous era.** Development is done by an autonomous software
+  factory: planning docs must NOT estimate human build effort or "weeks of
+  work". Prioritize and sequence by **external friction** instead — pilot
+  access and validation, credentials/API access, partnerships, compliance —
+  since build cost is ~zero and the whole backlog can be built in parallel.
 
 ## Closing the loop
 

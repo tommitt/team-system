@@ -14,6 +14,27 @@ Format:
 
 ---
 
+## 2026-07-06 — Catalogo skills & tools (v1 → v2, allineato al problem-space e al wedge)
+- **Did:** sessione di esplorazione partita da "cosa fa un commercialista e cosa
+  automatizzare": prima stesura del catalogo capability per l'MCP, poi verifica
+  di allineamento contro [content/knowledge/problem-space.md](content/knowledge/problem-space.md)
+  e riscrittura completa (v2), ricalibrata per la software factory autonoma e
+  infine allineata al capitolo Focus sul crunch del 20 luglio.
+- **Changed:** creato e riscritto
+  [content/brainstorms/catalogo-skills-tools.md](content/brainstorms/catalogo-skills-tools.md):
+  7 principi di design (non competere col gestionale; l'area 09 è il fossato;
+  campagne, non task; build ≈ zero → priorità per valore/attrito esterno);
+  4 categorie — 12 Skills, 4 Loops, 5 Watchdogs, 8 Tools con `studio-db`
+  keystone; sequenza a gate (G-pilota / G-accessi / G-partnership) con la
+  catena del cuneo 20/7 (L1→S7→S12→L2) come campagna 0. Aggiunta la
+  convenzione "era autonoma" al [CLAUDE.md](CLAUDE.md) di scope.
+- **Follow-ups:** quando l'impostazione si consolida, tre ADR candidati
+  (tassonomia a 4 categorie; `studio-db` keystone; prioritizzazione
+  valore/attrito). Verificare che il codice in `code/` (app/api/, lib/mcp/,
+  non committato) implementi la catena del cuneo nell'ordine di dipendenza.
+  Open questions vive nel catalogo: deploy locale vs cloud, pattern
+  bozza→revisione→firma con audit trail, studio pilota da reclutare.
+
 ## 2026-07-06 — Focus chapter: the 20 luglio 2026 versamenti crunch
 - **Did:** added a time-bound focus to the problem space: D.L. 89/2026 prorogated
   saldo 2025 + primo acconto 2026 to 20/7/2026 (20/8 with +0,80%) for soggetti ISA,
