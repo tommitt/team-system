@@ -62,7 +62,7 @@ Scripts (`code/package.json`):
 | `npm run db:push` | apply pending migrations to the linked project |
 | `npm run db:new <name>` | scaffold an empty hand-written migration (data migrations, things diff can't express) |
 | `npm run db:lint` | static schema check |
-| `npm run db:types` | regenerate `lib/billing/database.types.ts` from the linked schema |
+| `npm run db:types` | regenerate `src/lib/billing/database.types.ts` from the linked schema |
 
 Targeting **dev vs prod**: link the project you're pushing to first
 (`npx supabase link --project-ref <ref>`), or pass `--db-url <connection-string>`
@@ -115,7 +115,7 @@ file.
   version once, against a fresh shadow DB.
 - **`database.types.ts` is generated.** It's hand-seeded today to match generator
   output; the first real `npm run db:types` (after linking) canonicalizes it. The
-  service-role client in `lib/billing/supabase.ts` is typed `SupabaseClient<Database>`.
+  service-role client in `src/lib/billing/supabase.ts` is typed `SupabaseClient<Database>`.
 - **CI is deferred** (ADR 0007): applying migrations is a manual `npm run db:push`
   gate for now. Auto-apply on merge is a future follow-up.
 

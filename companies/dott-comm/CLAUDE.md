@@ -37,7 +37,7 @@ which are tractable with AI, before committing to what to build first.
   `node_modules/next/dist/docs/` before writing app code.
 - **Billing.** Identity in WorkOS, money in Stripe, entitlement + usage in
   Supabase; free trial = tool-call count; new MCP tools MUST register through
-  `registerGatedTool` (`code/lib/mcp/tools.ts`) so they're metered. See
+  `registerGatedTool` (`code/src/lib/mcp/tools.ts`) so they're metered. See
   [ADR 0002](content/decisions/0002-billing-supabase-stripe-usage-trial.md) and
   [billing-setup.md](content/knowledge/billing-setup.md).
 

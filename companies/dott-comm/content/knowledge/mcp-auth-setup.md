@@ -29,11 +29,11 @@ MCP client ──(1) discover──▶ /.well-known/oauth-protected-resource ─
 
 Relevant code:
 
-- `app/api/[transport]/route.ts` — the MCP handler + `withMcpAuth`. `verifyToken`
+- `src/app/api/[transport]/route.ts` — the MCP handler + `withMcpAuth`. `verifyToken`
   validates the JWT against AuthKit's JWKS (`/oauth2/jwks`), checking `issuer`
   (the AuthKit domain) and `audience` (this server's MCP URL). Verification uses
   `jose`; no WorkOS SDK is needed server-side.
-- `app/.well-known/oauth-protected-resource/route.ts` — RFC 9728 metadata that
+- `src/app/.well-known/oauth-protected-resource/route.ts` — RFC 9728 metadata that
   advertises the AuthKit domain as the authorization server.
 - `.env.example` — the env vars below.
 

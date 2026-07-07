@@ -8,8 +8,8 @@ export default defineConfig({
       // so stub it out to let server modules be unit-tested directly.
       "server-only": new URL("./test/stubs/server-only.ts", import.meta.url)
         .pathname,
-      // Mirror tsconfig's `@/*` → repo root so server modules resolve under vitest.
-      "@": new URL(".", import.meta.url).pathname.replace(/\/$/, ""),
+      // Mirror tsconfig's `@/*` → `src/` so server modules resolve under vitest.
+      "@": new URL("./src", import.meta.url).pathname.replace(/\/$/, ""),
     },
   },
 });

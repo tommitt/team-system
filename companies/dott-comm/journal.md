@@ -14,6 +14,29 @@ Format:
 
 ---
 
+## 2026-07-07 — Codice di produzione sotto `src/`
+- **Did:** riorganizzata la root di `code/` spostando il sorgente di produzione
+  (`app/`, `components/`, `lib/`, `proxy.ts`) sotto `src/`, per separarlo da
+  config, tooling e generati man mano che le LOC crescono. `git mv` per preservare
+  la history.
+- **Changed:**
+  - Codice/config: `git mv` in `src/`; `tsconfig.json` (`@/*` → `./src/*`),
+    `vitest.config.ts` (alias `@` → `./src`), `package.json` (`db:types` →
+    `src/lib/billing/database.types.ts`). Verificato: `npm run build` (con
+    `src/proxy.ts` rilevato come Middleware) e `npm run test` 52/52 passano.
+  - Decisione: nuovo [ADR 0009](content/decisions/0009-prod-source-under-src.md).
+  - Doc vivi aggiornati a `src/…`: [`code/AGENTS.md`](code/AGENTS.md) (nuovo bullet
+    sulla struttura), [CLAUDE.md](CLAUDE.md),
+    [billing-setup.md](content/knowledge/billing-setup.md),
+    [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md),
+    [db-schema-migrations.md](content/knowledge/db-schema-migrations.md),
+    [cuneo-20-luglio-build.md](content/knowledge/cuneo-20-luglio-build.md).
+  - ADR storici (0001/0003/0005/0007) lasciati com'erano: citano i path pre-`src/`
+    per regola "non si riscrive la storia".
+- **Follow-ups:** nessuno.
+
+---
+
 ## 2026-07-07 — Redesign della landing page (import da Claude Design)
 - **Did:** implementato il redesign `DottComm.dc.html` importato dal progetto
   Claude Design "DottComm website redesign" (via MCP `claude_design`). La landing

@@ -35,7 +35,7 @@ Più due **MCP prompt** (non gated): `metodo_estrazione_documenti`,
 
 ### Struttura del codice (`companies/dott-comm/code/`)
 
-- `lib/fiscal/` — **rules engine puro** (funzioni pure, testato):
+- `src/lib/fiscal/` — **rules engine puro** (funzioni pure, testato):
   - `constants.ts` — tutte le costanti a peso legale, centralizzate e con fonte;
     quelle incerte sono marcate **`DA VERIFICARE`** (vedi sotto).
   - `acconti.ts` — `calcolaAcconto` (split 40/60 vs 50/50 per regime),
@@ -45,9 +45,9 @@ Più due **MCP prompt** (non gated): `metodo_estrazione_documenti`,
   - `ravvedimento.ts` — `calcolaRavvedimento` (scaglioni + interessi legali).
   - `money.ts` — `round2`, `roundEuro`, `euro` (formato it).
   - `__tests__/` — unit test vitest.
-- `lib/parse/it-formats.ts` — `parseImportoIt`, `parseDataIt`,
+- `src/lib/parse/it-formats.ts` — `parseImportoIt`, `parseDataIt`,
   `validaPartitaIva` (check digit), `validaCodiceFiscale` (forma). Testato.
-- `lib/mcp/` — capability MCP:
+- `src/lib/mcp/` — capability MCP:
   - `register-gated-tool.ts` — wrapper che passa dal gate di billing (ADR 0002).
   - `skills/` (S12, S7, S9), `loops/` (L1, L2), `prompts.ts`.
   - `tools.ts` — **composer sottile** che registra tutto (niente più placeholder).
@@ -57,7 +57,7 @@ Più due **MCP prompt** (non gated): `metodo_estrazione_documenti`,
 Le costanti hanno peso legale e sono **default best-effort da validare con un
 professionista** prima dell'uso reale (gate G-pilota). I test verificano
 l'*aritmetica*, non l'esattezza normativa delle costanti. Punti sensibili in
-`lib/fiscal/constants.ts`: split acconto ISA/forfettari 50/50 (art. 12-quinquies
+`src/lib/fiscal/constants.ts`: split acconto ISA/forfettari 50/50 (art. 12-quinquies
 D.L. 34/2019), sanzione omesso versamento 25% post-riforma 2024, tasso legale
 annuo (cambia ogni anno, default placeholder 2%), scaglioni ravvedimento, codici
 F24. Ogni output porta il `DISCLAIMER_BOZZA`.

@@ -13,7 +13,7 @@
     "db:push": "supabase db push",
     "db:new": "supabase migration new",
     "db:lint": "supabase db lint",
-    "db:types": "supabase gen types typescript --linked > lib/billing/database.types.ts"
+    "db:types": "supabase gen types typescript --linked > src/lib/billing/database.types.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

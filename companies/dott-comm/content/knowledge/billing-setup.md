@@ -49,19 +49,19 @@ blocked with a friendly Italian message, never served unmetered.
   see [db-schema-migrations.md](./db-schema-migrations.md).
 - `supabase/migrations/0000{1,2}_*.sql` — derived history (`users_billing` +
   `increment_usage`, then the daily-usage rework). Applied, not hand-edited.
-- `lib/billing/database.types.ts` — generated schema types (`npm run db:types`).
-- `lib/billing/supabase.ts` — typed service-role client singleton (`server-only`).
-- `lib/billing/gate.ts` — `checkAndRecordUsage`, pure `decide()` behavior
+- `src/lib/billing/database.types.ts` — generated schema types (`npm run db:types`).
+- `src/lib/billing/supabase.ts` — typed service-role client singleton (`server-only`).
+- `src/lib/billing/gate.ts` — `checkAndRecordUsage`, pure `decide()` behavior
   matrix, `getBillingRow`.
-- `lib/billing/store.ts` — write helpers shared by checkout actions + webhook
+- `src/lib/billing/store.ts` — write helpers shared by checkout actions + webhook
   (idempotent, safe under Stripe retries).
-- `lib/mcp/tools.ts` — `registerGatedTool` wrapper; register every tool
+- `src/lib/mcp/tools.ts` — `registerGatedTool` wrapper; register every tool
   through it.
-- `proxy.ts` — AuthKit sessions for `/upgrade` + `/account` (Next 16 renamed
+- `src/proxy.ts` — AuthKit sessions for `/upgrade` + `/account` (Next 16 renamed
   middleware → proxy). `middlewareAuth` enabled; `/upgrade` is public.
-- `app/auth/callback/route.ts`, `app/upgrade/{page.tsx,actions.ts}`,
-  `app/upgrade/success/page.tsx`, `app/account/page.tsx` — the payment leg.
-- `app/api/stripe/webhook/route.ts` — signature-verified event → plan
+- `src/app/auth/callback/route.ts`, `src/app/upgrade/{page.tsx,actions.ts}`,
+  `src/app/upgrade/success/page.tsx`, `src/app/account/page.tsx` — the payment leg.
+- `src/app/api/stripe/webhook/route.ts` — signature-verified event → plan
   transitions.
 
 ## Plan states
@@ -85,7 +85,7 @@ maps onto the plan states above — it is **packaging, not a second mechanism**:
 | **Su misura** | quote | — | Enterprise (multi-seat, SSO). Sales channel (`mailto:info@dottcomm.dev`), **no self-serve checkout code yet**. |
 
 Keep three places in sync when the price changes: the landing Prezzi section
-(`app/page.tsx`), ADR 0008, and the Stripe Price (`STRIPE_PRICE_ID`). The Free
+(`src/app/page.tsx`), ADR 0008, and the Stripe Price (`STRIPE_PRICE_ID`). The Free
 card's "utilizzo mensile limitato" copy is a commercial simplification of the
 real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
 
@@ -134,13 +134,13 @@ real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
 
 ## Gotchas (learned building this)
 
-- **`proxy.ts` matcher must never cover `/api/*` or `/.well-known/*`** — the
+- **`src/proxy.ts` matcher must never cover `/api/*` or `/.well-known/*`** — the
   MCP endpoint does bearer auth; AuthKit session logic would break it. The
   matcher is an explicit allowlist (`/upgrade`, `/account`).
 - **`getSignInUrl()` / `withAuth({ ensureSignedIn })` set a PKCE cookie** in
   authkit-nextjs 4.x — illegal during server-component render in Next 16.
   Sign-in must go through a server action (`signIn()` in
-  `app/upgrade/actions.ts`) and signed-out protection through the proxy's
+  `src/app/upgrade/actions.ts`) and signed-out protection through the proxy's
   `middlewareAuth`, not `ensureSignedIn` in pages.
 - **Blocked tool calls are normal results** (no `isError`, no 4xx): MCP
   clients treat auth-shaped errors as broken connections and may loop into
