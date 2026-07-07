@@ -98,10 +98,11 @@ export default function Home() {
               <h3>Collega DottComm a Claude</h3>
               <p>
                 Apri <strong>+ → Connettori</strong> e scegli{" "}
-                <strong>Aggiungi connettore personalizzato</strong>. Incolla
-                l&apos;indirizzo di DottComm e accedi con il tuo account nella
-                finestra che si apre nel browser. Lo fai una volta sola: da lì
-                in poi DottComm è a disposizione in ogni chat.
+                <strong>Aggiungi connettore personalizzato</strong>. Scegli un
+                nome, incolla l&apos;indirizzo di DottComm che trovi qui sotto e
+                accedi con il tuo account nella finestra che si apre nel
+                browser. Lo fai una volta sola: da lì in poi DottComm è a
+                disposizione in ogni chat.
               </p>
               <CopyConnectorButton />
             </div>
@@ -172,6 +173,7 @@ export default function Home() {
         <div className="deco" aria-hidden="true" />
         <div className="cta-inner">
           <h2>Aumenta il tuo studio con l&apos;AI</h2>
+          <Image src="/logo.svg" alt="DottComm" width={30} height={30} />
         </div>
       </section>
 
