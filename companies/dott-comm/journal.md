@@ -14,6 +14,31 @@ Format:
 
 ---
 
+## 2026-07-06 — MCP server scaffold nell'app Next.js + auth WorkOS AuthKit
+- **Did:** deciso e realizzato dove vive il server MCP e come autentica. Serve
+  l'MCP dallo stesso app Next.js del sito (route handler `mcp-handler`,
+  `/api/mcp`), deployabile su Vercel nello stesso progetto; auth OAuth 2.1 con
+  WorkOS AuthKit come Authorization Server (il server è solo Resource Server:
+  verifica il JWT contro il JWKS di AuthKit con `jose`). Scaffold con due
+  capability **placeholder** (uno skill, un tool/connettore) esplicitamente
+  marcate `⚠️ PLACEHOLDER — NOT IMPLEMENTED`.
+- **Changed:**
+  - Codice (`code/`): `app/api/[transport]/route.ts`, `lib/mcp/tools.ts`,
+    `app/.well-known/oauth-protected-resource/route.ts`, `.env.example`
+    (+ `!.env.example` in `.gitignore`); dipendenze `mcp-handler`, `zod`, `jose`.
+  - Decisione: [ADR 0001](content/decisions/0001-mcp-in-nextjs-app-workos-auth.md) (accepted).
+  - Knowledge: [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md) (dev/runbook)
+    e [mcp-user-guide.md](content/knowledge/mcp-user-guide.md) (bozza utente).
+  - Convenzione stack aggiunta al [CLAUDE.md](CLAUDE.md) di scope.
+- **Verificato:** `tsc` e `next build` puliti; auth OFF → tools list/call OK;
+  auth ON (build di prova) → 401 con `WWW-Authenticate: … resource_metadata=…`,
+  token fasullo → 401, metadata espone il dominio AuthKit.
+- **Follow-ups:** completare il setup WorkOS Dashboard + env su Vercel (Resource
+  Indicator, DCR); definire ed enforce-are gli **scope** in `withMcpAuth`;
+  sostituire i placeholder con skill/tool reali dal catalogo; valutare Fluid
+  compute; completare la guida utente (URL/nome prodotto, metodi di login,
+  screenshot, FAQ privacy).
+
 ## 2026-07-07 — Marketing site: single-agent focus + visual onboarding guide
 - **Did:** several rounds of feedback-driven iteration on the landing page:
   narrowed the hero from a multi-agent rolling reel down to a single static

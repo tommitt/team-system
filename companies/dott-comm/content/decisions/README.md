@@ -9,4 +9,4 @@ live in `group/content/decisions/` instead.
 
 | # | Decision | Status |
 |---|---|---|
-| — | _none yet_ | — |
+| [0001](0001-mcp-in-nextjs-app-workos-auth.md) | MCP served from the website's Next.js app on Vercel; auth via WorkOS AuthKit | accepted |

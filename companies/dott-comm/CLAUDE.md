@@ -28,6 +28,13 @@ which are tractable with AI, before committing to what to build first.
   work". Prioritize and sequence by **external friction** instead — pilot
   access and validation, credentials/API access, partnerships, compliance —
   since build cost is ~zero and the whole backlog can be built in parallel.
+- **Stack (MCP server).** The MCP server is a route handler inside the website's
+  Next.js app (`code/`), deployed on Vercel in the same project; auth is OAuth
+  2.1 with WorkOS AuthKit as the Authorization Server. See
+  [ADR 0001](content/decisions/0001-mcp-in-nextjs-app-workos-auth.md) and
+  [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md). Note: this Next.js
+  (16.x) has breaking changes — read `code/AGENTS.md` and the bundled docs in
+  `node_modules/next/dist/docs/` before writing app code.
 
 ## Closing the loop
 
