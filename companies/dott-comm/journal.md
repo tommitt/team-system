@@ -14,6 +14,23 @@ Format:
 
 ---
 
+## 2026-07-07 — Paywall: link con token firmato → checkout senza re-login
+- **Did:** eliminato il re-login AuthKit nel percorso paywall → pagamento. Il
+  server MCP conosce già l'utente (JWT verificato), quindi firma un token di
+  breve durata (`{sub,exp}`, HMAC-SHA256, TTL 15 min) e lo mette nel link
+  `/upgrade?t=…`; la pagina lo verifica e manda dritto a Stripe Checkout.
+- **Changed:** nuovo `code/lib/billing/upgrade-token.ts` (+ test) con
+  `sign/verifyUpgradeToken`; `code/lib/billing/gate.ts` (`upgradeUrl(userId)` +
+  propagazione `userId` in `decide`/`checkAndRecordUsage`, default dominio
+  allineato a `www.dottcomm.dev`); `code/app/upgrade/actions.ts` (`startCheckout`
+  accetta il token) e `code/app/upgrade/page.tsx` (CTA checkout senza gate di
+  login). Aggiunti `vitest.config.ts` + stub `server-only` per testare moduli
+  server. Nuova [ADR 0005](content/decisions/0005-paywall-signed-token-checkout.md);
+  documentato `UPGRADE_TOKEN_SECRET` in `.env.example`.
+- **Follow-ups:** il **portale clienti** resta dietro login completo (per
+  scelta di sicurezza — token solo-checkout); gestire/ruotare
+  `UPGRADE_TOKEN_SECRET`.
+
 ## 2026-07-07 — Onboarding: connettore GUI dell'app Claude + prompt con auto-controllo
 - **Did:** chiarito come un utente **non tecnico** dell'**app desktop Claude**
   attiva davvero DottComm. Ricerca su docs Anthropic + guida Claude Code: sul

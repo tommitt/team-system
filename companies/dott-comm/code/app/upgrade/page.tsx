@@ -1,6 +1,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { BillingShell } from "@/components/BillingShell";
 import { getBillingRow, getTrialLimit, type Plan } from "@/lib/billing/gate";
+import { verifyUpgradeToken } from "@/lib/billing/upgrade-token";
 import { openCustomerPortal, signIn, startCheckout } from "./actions";
 
 export const metadata = { title: "Abbonamento — DottComm" };
@@ -12,10 +13,21 @@ const PLAN_LABELS: Record<Plan, string> = {
   canceled: "Abbonamento non attivo",
 };
 
-export default async function UpgradePage() {
+export default async function UpgradePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ t?: string }>;
+}) {
+  const { t } = await searchParams;
   const { user } = await withAuth();
 
-  if (!user) {
+  // A signed session always wins; the token only matters when signed out. The
+  // token lets a paywalled MCP user reach checkout without re-authenticating.
+  const tokenUserId = !user && t ? verifyUpgradeToken(t) : null;
+  const viaToken = !user && !!tokenUserId;
+  const effectiveUserId = user?.id ?? tokenUserId;
+
+  if (!effectiveUserId) {
     return (
       <BillingShell>
         <span className="mono steps-kicker">abbonamento</span>
@@ -33,7 +45,7 @@ export default async function UpgradePage() {
     );
   }
 
-  const row = await getBillingRow(user.id);
+  const row = await getBillingRow(effectiveUserId);
   const plan: Plan = row?.plan ?? "trial";
   const usage = row?.usage_count ?? 0;
   const limit = getTrialLimit();
@@ -54,10 +66,12 @@ export default async function UpgradePage() {
       </p>
 
       <div className="billing-card">
-        <div className="billing-row">
-          <dt>Account</dt>
-          <dd>{user.email}</dd>
-        </div>
+        {user && (
+          <div className="billing-row">
+            <dt>Account</dt>
+            <dd>{user.email}</dd>
+          </div>
+        )}
         <div className="billing-row">
           <dt>Piano</dt>
           <dd>
@@ -82,16 +96,32 @@ export default async function UpgradePage() {
         )}
 
         {plan === "active" ? (
-          <form className="billing-cta-form" action={openCustomerPortal}>
-            <button className="cta-btn cta-btn--big" type="submit">
-              Gestisci abbonamento
-            </button>
-            <span className="billing-note">
-              Fatture, metodo di pagamento e disdetta nel portale sicuro Stripe.
-            </span>
-          </form>
+          viaToken ? (
+            // Managing an active plan requires the sensitive portal, which is
+            // never reachable by token — send the user through a real login.
+            <form className="billing-cta-form" action={signIn}>
+              <button className="cta-btn cta-btn--big" type="submit">
+                Accedi per gestire l&apos;abbonamento
+              </button>
+              <span className="billing-note">
+                Per fatture, metodo di pagamento e disdetta accedi con il tuo
+                account.
+              </span>
+            </form>
+          ) : (
+            <form className="billing-cta-form" action={openCustomerPortal}>
+              <button className="cta-btn cta-btn--big" type="submit">
+                Gestisci abbonamento
+              </button>
+              <span className="billing-note">
+                Fatture, metodo di pagamento e disdetta nel portale sicuro
+                Stripe.
+              </span>
+            </form>
+          )
         ) : (
           <form className="billing-cta-form" action={startCheckout}>
+            {viaToken && <input type="hidden" name="t" value={t} />}
             <button className="cta-btn cta-btn--big" type="submit">
               {plan === "past_due" || plan === "canceled"
                 ? "Riattiva l'abbonamento"

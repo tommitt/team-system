@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "./supabase";
+import { signUpgradeToken } from "./upgrade-token";
 
 /**
  * The paywall gate (ADR 0002).
@@ -44,22 +45,38 @@ export function getTrialLimit(): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_TRIAL_LIMIT;
 }
 
-function upgradeUrl(): string {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dott-comm.vercel.app";
-  return `${site.replace(/\/$/, "")}/upgrade`;
+/**
+ * The paywall upgrade link. When we know the user id we append a short-lived
+ * signed token so the upgrade page can go straight to checkout without an
+ * AuthKit re-login (see upgrade-token.ts).
+ */
+function upgradeUrl(userId?: string): string {
+  const site = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dottcomm.dev"
+  ).replace(/\/$/, "");
+  const base = `${site}/upgrade`;
+  if (!userId) return base;
+  const token = signUpgradeToken(userId);
+  return token ? `${base}?t=${token}` : base;
 }
 
 const DB_ERROR_MESSAGE =
   "Si è verificato un problema temporaneo nel verificare il tuo account. " +
   "Riprova tra qualche istante.";
 
-/** Pure decision function — kept separate so paid caps can be added later. */
+/**
+ * Pure decision function — kept separate so paid caps can be added later.
+ * `userId`, when passed, is embedded in a signed token in the upgrade URL so
+ * the paywall link skips AuthKit re-login.
+ */
 export function decide(
   plan: Plan,
   usageCount: number,
   limit: number,
+  userId?: string,
 ): GateDecision {
   const base = { plan, usageCount, limit };
+  const upgrade = upgradeUrl(userId);
 
   switch (plan) {
     case "active":
@@ -70,7 +87,7 @@ export function decide(
         allowed: true,
         warning:
           "⚠️ Risulta un problema con l'ultimo pagamento del tuo abbonamento. " +
-          `Aggiorna il metodo di pagamento per non perdere l'accesso: ${upgradeUrl()}`,
+          `Aggiorna il metodo di pagamento per non perdere l'accesso: ${upgrade}`,
       };
     case "canceled":
       return {
@@ -78,7 +95,7 @@ export function decide(
         allowed: false,
         blockedMessage:
           "Il tuo abbonamento a Dott. Comm. non è attivo. " +
-          `Per riattivarlo e continuare a usare gli strumenti: ${upgradeUrl()}`,
+          `Per riattivarlo e continuare a usare gli strumenti: ${upgrade}`,
       };
     case "trial": {
       if (usageCount > limit) {
@@ -87,7 +104,7 @@ export function decide(
           allowed: false,
           blockedMessage:
             `Il periodo di prova gratuito di Dott. Comm. è terminato (${limit} chiamate). ` +
-            `Per continuare senza limiti, attiva l'abbonamento: ${upgradeUrl()}`,
+            `Per continuare senza limiti, attiva l'abbonamento: ${upgrade}`,
         };
       }
       if (usageCount >= Math.ceil(limit * WARN_RATIO)) {
@@ -96,7 +113,7 @@ export function decide(
           allowed: true,
           warning:
             `ℹ️ Hai usato ${usageCount}/${limit} chiamate della prova gratuita di Dott. Comm. ` +
-            `Per continuare senza limiti: ${upgradeUrl()}`,
+            `Per continuare senza limiti: ${upgrade}`,
         };
       }
       return { ...base, allowed: true };
@@ -118,7 +135,7 @@ export async function checkAndRecordUsage(
       .rpc("increment_usage", { p_workos_user_id: workosUserId })
       .single<{ usage_count: number; plan: Plan }>();
     if (error || !data) throw error ?? new Error("increment_usage returned no row");
-    return decide(data.plan, data.usage_count, limit);
+    return decide(data.plan, data.usage_count, limit, workosUserId);
   } catch (err) {
     console.error("Billing gate failed (blocking call, fail closed):", err);
     return {
