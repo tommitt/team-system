@@ -18,9 +18,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DottComm | Lo studio del futuro grazie all'AI",
+  title: "DottComm | Lo studio del futuro grazie a Claude Code",
   description:
-    "DottComm porta Claude Code, Codex, Hermes e OpenClaw nel tuo studio. Copia, incolla, lavora.",
+    "DottComm porta Claude Code nel tuo studio. Copia il prompt, incollalo, lavora.",
 };
 
 export default function RootLayout({

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AGENT_PROMPT } from "@/lib/prompt";
 
-const DEFAULT_LABEL = "Copia il prompt";
+const DEFAULT_LABEL = "Copia il prompt e incollalo su Claude Code";
+const NAV_LABEL = "Copia per Claude Code";
 const COPIED_LABEL = "Copiato. Incolla ora.";
 
 function fallbackCopy(text: string) {
@@ -22,7 +23,8 @@ function fallbackCopy(text: string) {
 }
 
 export function CopyPromptButton({ variant }: { variant: "nav" | "big" }) {
-  const [label, setLabel] = useState(DEFAULT_LABEL);
+  const defaultLabel = variant === "nav" ? NAV_LABEL : DEFAULT_LABEL;
+  const [label, setLabel] = useState(defaultLabel);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export function CopyPromptButton({ variant }: { variant: "nav" | "big" }) {
     const done = () => {
       setLabel(COPIED_LABEL);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setLabel(DEFAULT_LABEL), 1900);
+      timeoutRef.current = setTimeout(() => setLabel(defaultLabel), 1900);
     };
 
     if (navigator.clipboard?.writeText) {
