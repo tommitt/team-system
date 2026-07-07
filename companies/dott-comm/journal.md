@@ -14,6 +14,27 @@ Format:
 
 ---
 
+## 2026-07-06 — Marketing site ported to Next.js
+- **Did:** copy pass on the landing page (new headline "Lo studio del futuro
+  grazie a [agent]", two-line subtitle, dropped the hero eyebrow, CTA copy
+  simplified to "Copia il prompt" everywhere, flow-step copy tweak, footer
+  email → info@dottcomm.dev), then converted the whole thing from a
+  self-contained `index.html` into a proper Next.js 16 App Router project so
+  it's Vercel-deployable.
+- **Changed:** `code/` is now a Next.js app (`package.json`, `app/layout.tsx`,
+  `app/page.tsx`, `app/globals.css`, `components/AgentReel.tsx`,
+  `components/CopyPromptButton.tsx`, `components/ScrollRevealInit.tsx`,
+  `lib/prompt.ts`, `public/logo.svg`) — scaffolded with `create-next-app`,
+  fonts moved to `next/font/google` (self-hosted, no more Google Fonts CDN
+  link tags), logo moved to `next/image`. Verified with `npm run build`,
+  `npm run lint` (both clean) and a local `npm run dev` pass in the browser.
+  Old standalone `index.html` + `website/` removed.
+- **Follow-ups:** not yet linked to a Vercel project or deployed — deliberately
+  held off on running `vercel link`/`vercel deploy` pending explicit go-ahead,
+  since that touches the user's live Vercel account. No favicon yet. Copy is
+  still illustrative, not grounded in
+  [content/knowledge/problem-space.md](content/knowledge/problem-space.md).
+
 ## 2026-07-06 — Ricerca: gestionali per studi commercialisti e API
 - **Did:** ricerca approfondita (fan-out + verifica avversariale) su quali
   gestionali usano di più gli studi commercialisti in Italia e quali espongono
