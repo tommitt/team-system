@@ -1,6 +1,6 @@
 # Informativa sulla Privacy
 
-**Ultimo aggiornamento: 6 luglio 2026**
+**Ultimo aggiornamento: 7 luglio 2026**
 
 La presente informativa descrive come DottComm ("DottComm", "noi") raccoglie e
 tratta i dati personali degli utenti che visitano il sito e utilizzano i nostri
@@ -29,6 +29,15 @@ funzionare bene:
   della tua carta sui propri sistemi.
 - **Dati di utilizzo.** Informazioni tecniche su come usi il sito e il servizio,
   come indirizzo IP, tipo di browser, pagine visitate e data e ora dell'accesso.
+  Quando usi gli strumenti DottComm tramite il tuo assistente AI, registriamo
+  inoltre metadati tecnici di ogni chiamata (quale strumento, esito, tempi e i
+  soli nomi dei parametri utilizzati) per migliorare e mantenere efficiente il
+  servizio. **Non registriamo il contenuto delle richieste**: i dati fiscali
+  tuoi o dei tuoi clienti non vengono memorizzati sui nostri sistemi.
+- **Feedback volontari.** Se scegli di inviarci un feedback (anche tramite
+  l'apposito strumento `invia_feedback` nel tuo assistente AI), conserviamo il
+  testo della segnalazione per migliorare il servizio. Ti chiediamo di non
+  includervi dati personali dei tuoi clienti.
 - **Cookie e tecnologie simili.** Vedi la sezione dedicata più sotto.
 
 ## 3. Perché trattiamo i tuoi dati e su quale base

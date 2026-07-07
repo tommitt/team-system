@@ -5,6 +5,7 @@ import { registerRavvedimento } from "./skills/ravvedimento";
 import { registerRaccoltaDocumenti } from "./loops/raccolta-documenti";
 import { registerComunicaVersamenti } from "./loops/comunica-versamenti";
 import { registerPrompts } from "./prompts";
+import { registerFeedback } from "./feedback";
 
 /**
  * Registers Dott. Comm.'s MCP capabilities on the given server.
@@ -33,4 +34,7 @@ export function registerTools(server: McpServer) {
 
   // Prompts (metodo + template, non gated)
   registerPrompts(server);
+
+  // Feedback (ADR 0006, non gated — deve funzionare anche oltre il paywall)
+  registerFeedback(server);
 }

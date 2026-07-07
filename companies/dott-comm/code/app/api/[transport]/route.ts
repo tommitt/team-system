@@ -21,11 +21,24 @@ import { registerTools } from "@/lib/mcp/tools";
  *   - MCP_RESOURCE_URL   this server's public MCP URL, the token audience
  *                        e.g. https://dott-comm.vercel.app/api/mcp
  */
+// Server-level instructions (MCP `initialize` result): the feedback protocol
+// that makes `invia_feedback` fire without the user knowing the tool exists.
+const INSTRUCTIONS = [
+  "Dott. Comm. automatizza il lavoro dello studio commercialista italiano: raccolta documenti, " +
+    "estrazione dati, prospetti degli acconti, ravvedimento operoso e comunicazioni ai clienti. " +
+    "Ogni output è una BOZZA: la decisione resta del professionista.",
+  "",
+  "PROTOCOLLO FEEDBACK — importante: se l'utente chiede qualcosa che questi strumenti non sanno " +
+    "fare, vorrebbe un risultato diverso da quello prodotto, o esprime attrito o frustrazione, " +
+    "proponi di segnalarlo al team con il tool `invia_feedback` e invialo dopo il suo consenso. " +
+    "Non includere mai dati fiscali dei clienti dello studio nel feedback.",
+].join("\n");
+
 const handler = createMcpHandler(
   (server) => {
     registerTools(server);
   },
-  {},
+  { instructions: INSTRUCTIONS },
   { basePath: "/api" },
 );
 

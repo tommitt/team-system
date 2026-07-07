@@ -34,6 +34,29 @@ Format:
   daily — valutare se registrarne la revisione con un ADR quando il modello si
   stabilizza. Migration 00002 va eseguita in Supabase (SQL Editor) al deploy.
 
+## 2026-07-07 — Feedback & telemetria: il modello come raccoglitore di segnale
+- **Did:** risolto il problema "l'utente MCP non può darci feedback": (layer 1)
+  telemetria per-chiamata al chokepoint `registerGatedTool` → tabella
+  `tool_events` (tool, esito ok/error/blocked, latenza, **soli nomi** degli
+  argomenti, fail-open); (layer 2) tool ungated `invia_feedback` → tabella
+  `feedback` + `instructions` a livello server che istruiscono il modello a
+  proporre la segnalazione quando rileva bisogni non soddisfatti (col consenso
+  dell'utente, senza dati dei clienti). Layer 3 (cron di prioritizzazione)
+  rimandato — questa è la base dati che lo alimenterà.
+- **Changed:** nuova [ADR 0006](content/decisions/0006-telemetry-feedback-supabase.md)
+  (estende ADR 0003: Supabase = billing + segnale di prodotto, mai dati fiscali);
+  `code/supabase/migrations/00003_telemetry_feedback.sql`; nuovi
+  `code/lib/mcp/telemetry.ts` e `code/lib/mcp/feedback.ts`;
+  `register-gated-tool.ts` (telemetria + `resolveUserId` estratto), `tools.ts`,
+  `route.ts` (instructions); alias `@` in `vitest.config.ts`; 14 nuovi test;
+  `code/AGENTS.md` (eccezione ungated); `code/legal/privacy-policy.md`
+  (telemetria + feedback — **da far rivedere**). Verificato end-to-end in dev:
+  instructions avvertite, tool ok/blocked/feedback, fail-open con tabelle mancanti.
+- **Follow-ups:** applicare la migration 00003 su Supabase dev e prod (SQL
+  Editor, dopo la 00002 del trial giornaliero); revisione legale dell'informativa; layer 3 (cron mattutino di
+  clustering + prioritizzazione per frizione esterna); valutare cattura dei
+  fallimenti di validazione Zod (avvengono nell'SDK prima del wrapper).
+
 ## 2026-07-07 — Paywall: link con token firmato → checkout senza re-login
 - **Did:** eliminato il re-login AuthKit nel percorso paywall → pagamento. Il
   server MCP conosce già l'utente (JWT verificato), quindi firma un token di
