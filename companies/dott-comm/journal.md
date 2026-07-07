@@ -14,6 +14,38 @@ Format:
 
 ---
 
+## 2026-07-07 — Track A: costruito il cuneo del 20 luglio (L1→S7→S12→L2)
+- **Did:** implementato e verificato end-to-end il cuneo del 20 luglio nel server
+  MCP (`code/`): rules engine fiscale puro + 5 capability + 2 MCP prompt, a
+  partire dal [piano approvato](../../).
+- **Changed:**
+  - **Codice** (`code/`): nuovo `lib/fiscal/` (acconti, rateazione, f24-codici,
+    ravvedimento, constants, money) e `lib/parse/it-formats.ts` — funzioni pure,
+    23 unit test vitest. Nuove capability MCP in `lib/mcp/skills/`
+    (`prospetto_acconti` S12, `estrai_documenti` S7, `ravvedimento` S9),
+    `lib/mcp/loops/` (`raccolta_documenti` L1, `comunica_versamenti` L2),
+    `lib/mcp/prompts.ts` (2 prompt). `register-gated-tool.ts` estratto;
+    `tools.ts` ora è un composer; rimossi i 2 placeholder. `package.json`:
+    aggiunto vitest + script `test`. `AGENTS.md`: sezione MCP capabilities.
+  - **Decisione:** nuovo [ADR 0003](content/decisions/0003-track-a-stateless-client-local-state.md)
+    — Track A senza stato di dominio server-side, stato client-local, `studio-db`
+    riformulato come convenzione (non DB); GDPR ≈ zero. Log ADR aggiornato (aggiunti
+    0002 e 0003, prima mancanti).
+  - **Knowledge:** nuovo [cuneo-20-luglio-build.md](content/knowledge/cuneo-20-luglio-build.md).
+  - **Brainstorm:** [catalogo-skills-tools.md](content/brainstorms/catalogo-skills-tools.md)
+    — T1 riformulato client-local + sezione "Stato build".
+- **Follow-ups:**
+  - **Validare le costanti fiscali `DA VERIFICARE`** con un professionista prima
+    dell'uso reale (split ISA 50/50, sanzione 25%, tasso legale, codici F24) —
+    gate G-pilota.
+  - Definire la convenzione file di `studio/` (roster, scadenzario, raccolta,
+    comunicazioni.log) col primo pilota.
+  - Resto di Track A: skill S1–S6/S8/S10/S11, watchdog W2/W3.
+  - Notato in verifica: dev server orfani su porte diverse causano confusione —
+    killare i `next dev` prima di testare.
+
+---
+
 ## 2026-07-07 — Marketing: campagna crunch 20/7 + video ad "ninja commercialista"
 - **Did:** first comms/marketing exploration for Dott. Comm. Framed the two hard
   constraints (2-week seasonal window to 20/7; product still mostly placeholder →

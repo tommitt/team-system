@@ -2,7 +2,7 @@
 title: Catalogo skills & tools per l'MCP dei commercialisti
 status: draft
 owner: ttassi
-updated: 2026-07-06
+updated: 2026-07-07
 tags: [mcp, skills, tools, watchdogs, product, esplorazione]
 ---
 
@@ -146,7 +146,7 @@ testo non strutturato + derivazione di regole.
 
 | # | Tool | Cosa espone | Dipendenze / stato | Attrito |
 |---|---|---|---|---|
-| T1 | `studio-db` — **il keystone** | Anagrafica clienti con attributi → adempimenti applicabili; scadenzario (cliente × adempimento × scadenza × assegnatario × stato); registro deleghe e scadenze di accesso; stato raccolta documenti; audit trail di notifiche e conferme | Nessuna: è nostro. È il data model che abilita L1–L4, W3–W5 e le campagne | Basso — l'unico attrito è validare il data model con gli studi |
+| T1 | `studio-db` — **il keystone, come convenzione client-local** (rivisto, [ADR 0003](../decisions/0003-track-a-stateless-client-local-state.md)) | Lo stesso data model — anagrafica clienti → adempimenti; scadenzario (cliente × adempimento × scadenza × assegnatario × stato); registro deleghe/scadenze di accesso; stato raccolta documenti; audit trail notifiche e conferme — ma **come file dello studio** che il client (Claude Code) mantiene, **non** una tabella nostra | Nessuna dipendenza e **zero PII sui nostri server** (GDPR ≈ zero). Abilita L1–L4, W3–W5 e le campagne in forma client-local. Diventa stato server-side solo dietro trigger concreti (watchdog always-on, client senza filesystem, multi-utente live) — vedi ADR 0003 | Basso — validare la convenzione file col primo pilota |
 | T2 | `pec` — lettura e classificazione | Lista/lettura messaggi, classificazione (AdE, INPS, tribunale, clienti), estrazione allegati e atti | IMAP standard sui provider PEC: tecnicamente semplice, delicato per privacy. Abilita W1 | Basso-medio |
 | T3 | `sdi-fatture` — fatture elettroniche | Fatture attive/passive per cliente e periodo | **Fatture in Cloud** (gruppo TeamSystem): unica API self-service documentata trovata, con MCP open source esistente ([`aringad/fattureincloud-mcp`](https://github.com/aringad/fattureincloud-mcp), 23 tool) da valutare per fork/riuso. Alternativa: API massiva AdE via intermediario | Medio (FiC) / Alto (AdE) |
 | T4 | `gestionale` — lettura/scrittura sul gestionale di studio | Piano dei conti, anagrafiche, partitario; scrittura registrazioni (chiude il loop del data entry) | Nessuna API aperta trovata per TeamSystem Studio, Zucchetti Ago/Infinity, Profis, Passepartout (vedi [`gestionali-mercato-e-api.md`](gestionali-mercato-e-api.md)) → probabile partnership diretta col vendor | Alto |
@@ -250,3 +250,15 @@ scadenzario, dei registri di scadenza e delle campagne. I watchdog sono la
 categoria distintiva del prodotto (nessun gestionale li fa bene, il costo di
 fallimento li rende facilmente prezzabili) e si accendono man mano che i
 gate di accesso si aprono: W2 subito (file locali), W1 con la PEC.
+
+## Stato build (2026-07-07)
+
+Il **cuneo del 20 luglio è costruito in v0 e verificato end-to-end** nel server
+MCP (`code/`): S12 `prospetto_acconti` (keystone), S7 `estrai_documenti`, L1
+`raccolta_documenti`, L2 `comunica_versamenti`, più S9 `ravvedimento` e due MCP
+prompt (metodo estrazione, tono comunicazione). Il rules engine fiscale vive in
+`code/lib/fiscal/` (funzioni pure, 23 unit test), con le costanti a peso legale
+centralizzate e marcate `DA VERIFICARE`; ogni output è una *bozza*. Architettura
+e scelta client-local: [ADR 0003](../decisions/0003-track-a-stateless-client-local-state.md).
+Resta da fare: validazione delle costanti fiscali con un professionista (gate
+G-pilota), il resto delle skill S1–S6/S8/S10/S11 e i watchdog W2/W3.

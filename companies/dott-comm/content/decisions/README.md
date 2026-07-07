@@ -10,3 +10,5 @@ live in `group/content/decisions/` instead.
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-mcp-in-nextjs-app-workos-auth.md) | MCP served from the website's Next.js app on Vercel; auth via WorkOS AuthKit | accepted |
+| [0002](0002-billing-supabase-stripe-usage-trial.md) | Billing: Supabase for entitlement/usage, Stripe for money, usage-gated free trial | accepted |
+| [0003](0003-track-a-stateless-client-local-state.md) | Track A senza stato di dominio server-side: rules engine puro, stato client-local, studio-db come convenzione | accepted |
