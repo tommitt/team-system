@@ -14,6 +14,27 @@ Format:
 
 ---
 
+## 2026-07-07 — Marketing site: single-agent focus + visual onboarding guide
+- **Did:** several rounds of feedback-driven iteration on the landing page:
+  narrowed the hero from a multi-agent rolling reel down to a single static
+  "Claude Code" mention (the product only targets Claude Code for now); pushed
+  CTA copy to explicit "copia e incollalo su Claude Code" everywhere; rewrote
+  the mid-page section from an abstract "how the agent works" explainer into a
+  literal getting-started walkthrough (download the app + create an account →
+  open the Code tab and paste the prompt → talk to it), aimed at people who've
+  never touched Claude before.
+- **Changed:** `code/components/AgentReel.tsx` removed; `code/app/page.tsx` +
+  `code/app/globals.css` rebuilt the getting-started section as three
+  alternating rows, each with a bigger number badge and a hand-built visual
+  mockup (download card, app-with-Code-tab-active card, chat-conversation
+  card). `code/public/claude-logo.svg` added — the real Claude sunburst mark
+  (Simple Icons, official brand orange), used in the download mockup; step 1
+  now links to the verified real `https://claude.ai/download`.
+- **Follow-ups:** same as before — copy is still illustrative, not yet
+  grounded in [content/knowledge/problem-space.md](content/knowledge/problem-space.md)
+  or the capability catalog; no real testimonials yet; still not deployed to
+  Vercel (linked but never shipped).
+
 ## 2026-07-06 — Catalogo skills & tools (v1 → v2, allineato al problem-space e al wedge)
 - **Did:** sessione di esplorazione partita da "cosa fa un commercialista e cosa
   automatizzare": prima stesura del catalogo capability per l'MCP, poi verifica
