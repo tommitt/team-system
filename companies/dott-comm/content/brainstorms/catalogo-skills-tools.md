@@ -257,8 +257,30 @@ Il **cuneo del 20 luglio è costruito in v0 e verificato end-to-end** nel server
 MCP (`code/`): S12 `prospetto_acconti` (keystone), S7 `estrai_documenti`, L1
 `raccolta_documenti`, L2 `comunica_versamenti`, più S9 `ravvedimento` e due MCP
 prompt (metodo estrazione, tono comunicazione). Il rules engine fiscale vive in
-`code/lib/fiscal/` (funzioni pure, 23 unit test), con le costanti a peso legale
+`code/src/lib/fiscal/` (funzioni pure), con le costanti a peso legale
 centralizzate e marcate `DA VERIFICARE`; ogni output è una *bozza*. Architettura
 e scelta client-local: [ADR 0003](../decisions/0003-track-a-stateless-client-local-state.md).
-Resta da fare: validazione delle costanti fiscali con un professionista (gate
-G-pilota), il resto delle skill S1–S6/S8/S10/S11 e i watchdog W2/W3.
+
+**Aggiornamento (stessa data) — i tre trigger quotidiani** (dal brainstorm
+[test-della-giornata](test-della-giornata-valore-quotidiano.md)):
+
+- **`triage_atto`** (S2/W1 in forma paste-in): classificazione a carico del
+  client, termini perentori deterministici in `lib/fiscal/termini.ts` +
+  `calendario.ts` (sospensione feriale, sospensione estiva bonari, +90 gg
+  adesione, slittamenti festivi).
+- **`scadenze_cliente`** (T1 client-local): attributi cliente → scadenzario
+  derivato (`lib/fiscal/adempimenti.ts`).
+- **L1/L2 promossi a campagne** sul portafoglio (dashboard + bozze per
+  cliente) con stato nei file `studio/` — convenzione decisa in
+  [ADR 0010](../decisions/0010-convenzione-studio-db-client-local.md) e
+  documentata dal prompt `convenzione_studio_db`.
+
+Tutto verificato con unit test sull'aritmetica + test end-to-end attraverso il
+vero server MCP (80 test).
+
+Resta da fare: allineamento costanti ai valori verificati
+([costanti-fiscali-da-allineare](costanti-fiscali-da-allineare.md)),
+validazione col professionista (gate G-pilota), la famiglia calcolatori
+domande-spot (proposta: `simula_forfettario` e `dividendi_vs_compenso` gated,
+`deducibilita` come prompt ungated, costo-dipendente rinviato — da decidere),
+il resto delle skill S1–S6/S8/S10/S11 e i watchdog W2/W3.

@@ -14,6 +14,45 @@ Format:
 
 ---
 
+## 2026-07-07 — Il test della giornata → i tre trigger quotidiani
+
+- **Did:** analisi "test della giornata" (i tool attuali coprono 2 momenti su
+  ~12 del quotidiano dello studio, nessuno giornaliero) e build delle priorità
+  1–3 che ne derivano: `triage_atto`, `scadenze_cliente` + convenzione
+  `studio/`, loop L1/L2 promossi a campagne sul portafoglio.
+- **Changed:**
+  - Brainstorm: [test-della-giornata-valore-quotidiano.md](content/brainstorms/test-della-giornata-valore-quotidiano.md)
+    (audit onesto dei 5 tool, principio "un tool gated si guadagna il gate col
+    determinismo a peso legale", inventario del lavoro ripetitivo, priorità).
+  - Codice (`code/src/`): nuovi motori puri `lib/fiscal/calendario.ts`
+    (festivi, Pasqua, slittamenti, conteggi con sospensioni), `termini.ts`
+    (termini perentori per 6 tipi di atto: feriale, sospensione bonari,
+    +90 gg adesione) e `adempimenti.ts` (attributi cliente → scadenzario);
+    nuovi tool `triage_atto` e `scadenze_cliente`; `raccolta_documenti` e
+    `comunica_versamenti` in forma campagna; nuovo prompt MCP
+    `convenzione_studio_db`; costanti termini in `constants.ts` (tutte
+    `DA VERIFICARE`). Verifica: 22 unit test nuovi + `tools-e2e.test.ts`
+    attraverso il vero McpServer (80/80), tsc e lint puliti. Branch:
+    `dott-comm/triage-scadenzario-campagne`.
+  - Decisione: nuovo [ADR 0010](content/decisions/0010-convenzione-studio-db-client-local.md)
+    (convenzione `studio/` client-local); indicizzati 0009 e 0010 nel
+    [README delle decisioni](content/decisions/README.md).
+  - Doc vivi: [mcp-user-guide.md](content/knowledge/mcp-user-guide.md)
+    (sezione placeholder → elenco capability reali),
+    [catalogo-skills-tools.md](content/brainstorms/catalogo-skills-tools.md)
+    (stato build aggiornato), [`code/AGENTS.md`](code/AGENTS.md) (bullet ADR
+    0003 esteso con la convenzione `studio/`).
+- **Follow-ups:**
+  - Allineare `constants.ts` ai valori verificati
+    ([costanti-fiscali-da-allineare](content/brainstorms/costanti-fiscali-da-allineare.md),
+    da sessione parallela — include le nuove costanti termini).
+  - Decidere sulla famiglia calcolatori domande-spot (proposta in chiusura di
+    sessione: `simula_forfettario` e `dividendi_vs_compenso` gated,
+    `deducibilita` come prompt ungated, costo-dipendente rinviato).
+  - Validare la convenzione `studio/` al gate G-pilota (ADR 0010).
+
+---
+
 ## 2026-07-07 — Codice di produzione sotto `src/`
 - **Did:** riorganizzata la root di `code/` spostando il sorgente di produzione
   (`app/`, `components/`, `lib/`, `proxy.ts`) sotto `src/`, per separarlo da

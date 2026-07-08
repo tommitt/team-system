@@ -72,13 +72,25 @@ prodotto). In pratica:
 > ⚠️ Oggi il tenant AuthKit è ancora **staging** — va spostato in produzione
 > prima del lancio (vedi follow-up in [ADR 0004](../decisions/0004-onboarding-claude-connector-gui.md)).
 
-## Cosa puoi fare (in arrivo)
+## Cosa puoi fare
 
-Le capability reali arriveranno dal
-[catalogo skills & tools](../brainstorms/catalogo-skills-tools.md). Oggi il
-server espone solo strumenti **placeholder** (`placeholder_skill_*`,
-`placeholder_tool_*`) che non fanno lavoro reale — servono a verificare la
-connessione.
+Il server espone le prime capability reali (ogni output è una **bozza** da far
+verificare al professionista; roadmap nel
+[catalogo skills & tools](../brainstorms/catalogo-skills-tools.md)):
+
+- `onboarding` — il punto d'ingresso guidato.
+- `prospetto_acconti` — saldo + acconti del 20/7 (20/8 +0,80%), storico vs
+  previsionale con riga di rischio, piano rate con codici F24.
+- `estrai_documenti` — normalizza/valida dati estratti da documenti (date e
+  importi italiani, check digit P.IVA/CF).
+- `ravvedimento` — sanzioni ridotte e interessi per versamenti tardivi.
+- `triage_atto` — termini perentori e opzioni di un atto notificato (avviso
+  bonario, accertamento, cartella, ...), con sospensioni e slittamenti.
+- `scadenze_cliente` — lo scadenzario derivato dagli attributi del cliente.
+- `raccolta_documenti` / `comunica_versamenti` — campagne sul portafoglio:
+  solleciti documenti mirati e comunicazioni di versamento, con lo stato nei
+  file `studio/` dello studio (prompt `convenzione_studio_db`,
+  [ADR 0010](../decisions/0010-convenzione-studio-db-client-local.md)).
 
 ## Da completare in questa guida
 
