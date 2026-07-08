@@ -2,9 +2,11 @@
  * Codici tributo F24 per i versamenti del cuneo (saldo + acconti + interessi
  * rateazione). Dati puri.
  *
- * ⚠️ DA VERIFICARE. I codici tributo cambiano per risoluzione dell'Agenzia
- * delle Entrate; questa è la mappa dei casi più comuni del cuneo, da confermare
- * sulla tabella AdE vigente prima dell'uso. Il tool li propone come bozza.
+ * Provenienza: tutti i 13 codici confermati testuali contro le pagine "ricerca
+ * codici tributo" dell'Agenzia delle Entrate — verificato il 2026-07-07,
+ * nessun codice superato da risoluzione più recente. I codici cambiano per
+ * risoluzione AdE: rientrano nel giro della skill `/verifica-costanti`.
+ * Il tool li propone comunque come bozza.
  */
 
 export type Tributo = "irpef" | "forfettario" | "cedolare" | "irap" | "iva";

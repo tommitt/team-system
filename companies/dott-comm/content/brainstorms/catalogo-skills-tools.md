@@ -276,11 +276,21 @@ e scelta client-local: [ADR 0003](../decisions/0003-track-a-stateless-client-loc
   documentata dal prompt `convenzione_studio_db`.
 
 Tutto verificato con unit test sull'aritmetica + test end-to-end attraverso il
-vero server MCP (80 test).
+vero server MCP (97 test).
 
-Resta da fare: allineamento costanti ai valori verificati
-([costanti-fiscali-da-allineare](costanti-fiscali-da-allineare.md)),
-validazione col professionista (gate G-pilota), la famiglia calcolatori
-domande-spot (proposta: `simula_forfettario` e `dividendi_vs_compenso` gated,
-`deducibilita` come prompt ungated, costo-dipendente rinviato — da decidere),
-il resto delle skill S1–S6/S8/S10/S11 e i watchdog W2/W3.
+**Aggiornamento 2026-07-07 (sera) — registro costanti.** Le costanti fiscali
+sono migrate al registro con provenienza e tabelle tempo-indicizzate
+([ADR 0011](../decisions/0011-registro-costanti-fiscali-provenienza.md)), con
+le 5 divergenze della verifica di massa applicate (tasso legale 1,60%, bonari
+60/90 gg, scaglioni ravvedimento a trigger, festività 4/10, rate AdER
+84/96/108); processo di ri-verifica: skill `/verifica-costanti` + doc
+[manutenzione-costanti-fiscali](../knowledge/manutenzione-costanti-fiscali.md).
+La **regola del gate** per i calcolatori futuri: si spedisce solo con costanti
+registrate (fonte + `verificatoIl`); i grandi dataset (ACI, addizionali
+comunali) non sono costanti — v0 chiede il dato all'utente.
+
+Resta da fare: validazione col professionista (gate G-pilota), la famiglia
+calcolatori domande-spot (proposta: `simula_forfettario` e
+`dividendi_vs_compenso` gated, `deducibilita` come prompt ungated,
+costo-dipendente rinviato — da decidere), il resto delle skill
+S1–S6/S8/S10/S11 e i watchdog W2/W3.

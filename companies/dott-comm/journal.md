@@ -14,6 +14,36 @@ Format:
 
 ---
 
+## 2026-07-07 — Registro costanti fiscali: provenienza, vigenze, `/verifica-costanti`
+
+- **Did:** deciso e implementato come mantenere le costanti a peso legale
+  (input: la verifica di massa su fonti ufficiali fatta in altra sessione).
+  Migrato `code/src/lib/fiscal/` al registro con provenienza
+  (`{valore, fonte, verificatoIl}` + tabelle tempo-indicizzate via
+  `lookupVigente`, nuovo `registry.ts`) e applicate le 5 divergenze trovate:
+  tasso legale 2026 1,60% con pro-rata pluriennale, termini bonari 60/90 gg
+  (D.Lgs. 108/2024), scaglioni ravvedimento b-bis/b-ter a trigger (D.Lgs.
+  87/2024) con avvertenze per il pre-riforma, festività 4/10 dal 2026
+  (L. 151/2025), rate AdER 84/96/108 per anno-istanza (D.Lgs. 110/2024).
+  Bonus verificati: soglia ISA/forfettari €206 in `acconti.ts`, riduzione 2/3
+  per esiti 36-ter in `termini.ts`/`triage_atto`. 97 test verdi.
+- **Changed:** [ADR 0011](content/decisions/0011-registro-costanti-fiscali-provenienza.md)
+  (registry in codice + skill di ri-verifica + regola del gate per i futuri
+  calcolatori); nuova skill company-scoped
+  `companies/dott-comm/.claude/skills/verifica-costanti/` (spostata dal
+  livello group: vale la regola "prefer the narrower company scope");
+  nuovo [manutenzione-costanti-fiscali](content/knowledge/manutenzione-costanti-fiscali.md)
+  che SOSTITUISCE i due doc temporanei della verifica (eliminati:
+  `knowledge/costanti-fiscali-verificate-2026.md`,
+  `brainstorms/costanti-fiscali-da-allineare.md` — la provenienza ora vive nel
+  codice); aggiornati `code/AGENTS.md` (convenzione registry) e il
+  [catalogo](content/brainstorms/catalogo-skills-tools.md) (stato build).
+- **Follow-ups:** ricontrollo conversione D.L. 89/2026 (~21/7) e tasso legale
+  2024 mai riverificato; primo giro pieno di `/verifica-costanti` a dicembre
+  2026; regime sanzionatorio pre-1/9/2024 non modellato (il motore avvisa);
+  la famiglia calcolatori domande-spot ora ha il suo prerequisito — resta la
+  scelta di quali costruire per primi.
+
 ## 2026-07-07 — Il test della giornata → i tre trigger quotidiani
 
 - **Did:** analisi "test della giornata" (i tool attuali coprono 2 momenti su

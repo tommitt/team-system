@@ -6,6 +6,7 @@ import { euro } from "@/lib/fiscal/money";
 import {
   DISCLAIMER_BOZZA,
   RIDUZIONE_SANZIONE_BONARIO,
+  RIDUZIONE_SANZIONE_CONTROLLO_FORMALE,
 } from "@/lib/fiscal/constants";
 
 /**
@@ -56,13 +57,19 @@ export function registerTriageAtto(server: McpServer) {
         .number()
         .optional()
         .describe(
-          "Solo avviso bonario: sanzione piena indicata nell'atto, per calcolare la ridotta a 1/3",
+          "Solo avviso bonario: sanzione piena indicata nell'atto, per calcolare la ridotta (1/3, o 2/3 se da controllo formale)",
         ),
       telematico_intermediario: z
         .boolean()
         .default(false)
         .describe(
-          "Solo avviso bonario: esito reso disponibile in via telematica all'intermediario (termine 60 gg invece di 30)",
+          "Solo avviso bonario: esito reso disponibile in via telematica all'intermediario (termine 90 gg invece di 60)",
+        ),
+      da_controllo_formale: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Solo avviso bonario: esito di CONTROLLO FORMALE 36-ter (sanzione ridotta a 2/3, non a 1/3 come nel controllo automatico 36-bis)",
         ),
       con_adesione: z
         .boolean()
@@ -77,6 +84,7 @@ export function registerTriageAtto(server: McpServer) {
         dataNotifica: args.data_notifica,
         telematicoIntermediario: args.telematico_intermediario,
         conAdesione: args.con_adesione,
+        esitoControlloFormale: args.da_controllo_formale,
       });
 
       const L: string[] = [];
@@ -98,9 +106,12 @@ export function registerTriageAtto(server: McpServer) {
       L.push("");
 
       if (args.tipo_atto === "avviso_bonario" && args.sanzione_piena !== undefined) {
-        const ridotta = args.sanzione_piena * RIDUZIONE_SANZIONE_BONARIO;
+        const riduzione = args.da_controllo_formale
+          ? { frazione: "2/3", valore: RIDUZIONE_SANZIONE_CONTROLLO_FORMALE.valore }
+          : { frazione: "1/3", valore: RIDUZIONE_SANZIONE_BONARIO.valore };
+        const ridotta = args.sanzione_piena * riduzione.valore;
         L.push(
-          `Sanzione: piena ${euro(args.sanzione_piena)} → ridotta a 1/3 se si definisce nei termini: ${euro(ridotta)} (risparmio ${euro(args.sanzione_piena - ridotta)}).`,
+          `Sanzione: piena ${euro(args.sanzione_piena)} → ridotta a ${riduzione.frazione} se si definisce nei termini: ${euro(ridotta)} (risparmio ${euro(args.sanzione_piena - ridotta)}).`,
         );
         L.push("");
       }

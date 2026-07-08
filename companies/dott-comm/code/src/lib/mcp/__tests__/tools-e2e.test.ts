@@ -80,7 +80,7 @@ describe("MCP end-to-end", () => {
       importo: 3000,
       sanzione_piena: 750,
     });
-    expect(testo).toContain("2026-09-23"); // sospensione estiva bonari
+    expect(testo).toContain("2026-10-23"); // 60 gg + sospensione estiva bonari
     expect(testo).toContain("250,00 €"); // sanzione ridotta a 1/3
   });
 

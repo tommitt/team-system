@@ -48,7 +48,7 @@ export function pianoRate(params: {
   dataPrimaRata: string; // YYYY-MM-DD
 }): PianoRate {
   const { importoTotale, dataPrimaRata } = params;
-  const nRateRichieste = Math.max(1, Math.min(params.nRate, RATE_MAX));
+  const nRateRichieste = Math.max(1, Math.min(params.nRate, RATE_MAX.valore));
 
   const [annoStr, meseStr] = dataPrimaRata.split("-");
   const anno = Number(annoStr);
@@ -58,7 +58,7 @@ export function pianoRate(params: {
   const scadenze: string[] = [dataPrimaRata];
   for (let i = 1; i < nRateRichieste; i++) {
     const s = sedicesimo(anno, mese0 + i);
-    if (s > SCADENZA_ULTIMA_RATA) break;
+    if (s > SCADENZA_ULTIMA_RATA.valore) break;
     scadenze.push(s);
   }
   const nRateEffettive = scadenze.length;
@@ -73,7 +73,7 @@ export function pianoRate(params: {
         ? round2(importoTotale - quotaCapitale * (nRateEffettive - 1))
         : quotaCapitale;
     const interessi = round2(
-      capitale * INTERESSE_RATEIZZO_MENSILE * (numero - 1),
+      capitale * INTERESSE_RATEIZZO_MENSILE.valore * (numero - 1),
     );
     return {
       numero,

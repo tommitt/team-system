@@ -19,3 +19,4 @@ live in `group/content/decisions/` instead.
 | [0008](0008-listino-pubblico-packaging.md) | Listino pubblico e packaging: Free / Premium €98 / Su misura | accepted |
 | [0009](0009-prod-source-under-src.md) | Sorgente di produzione sotto `src/` (app, components, lib, proxy) | accepted |
 | [0010](0010-convenzione-studio-db-client-local.md) | Convenzione `studio/`: lo stato dello studio come file markdown client-local | accepted |
+| [0011](0011-registro-costanti-fiscali-provenienza.md) | Registro costanti fiscali con provenienza + tabelle tempo-indicizzate + skill `/verifica-costanti` | accepted |

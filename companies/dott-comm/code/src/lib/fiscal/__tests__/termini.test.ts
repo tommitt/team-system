@@ -58,27 +58,38 @@ describe("calendario", () => {
 });
 
 describe("calcolaTermini", () => {
-  it("avviso bonario: 30 gg con sospensione estiva 1/8–4/9", () => {
-    // Notifica 2026-07-20: senza sospensione maturerebbe il 19/8; la finestra
-    // 1/8–4/9 sospende il conteggio → 11 gg consumati a luglio (21–31), i
-    // restanti 19 dal 5/9 → matura il 23/9 (mercoledì, nessuno slittamento).
+  it("avviso bonario: 60 gg (D.Lgs. 108/2024) con sospensione estiva 1/8–4/9", () => {
+    // Notifica 2026-07-20: 11 gg consumati a luglio (21–31), sospensione
+    // 1/8–4/9, i restanti 49 dal 5/9 → 26 a settembre (5–30) + 23 a ottobre
+    // → matura il 23/10 (venerdì, nessuno slittamento).
     const t = calcolaTermini({
       tipo: "avviso_bonario",
       dataNotifica: "2026-07-20",
     });
     const pagamento = t.termini.find((x) => x.chiave === "pagamento_agevolato");
-    expect(pagamento?.scadenza).toBe("2026-09-23");
+    expect(pagamento?.scadenza).toBe("2026-10-23");
     expect(pagamento?.perentorio).toBe(true);
   });
 
-  it("avviso bonario telematico all'intermediario: 60 gg", () => {
+  it("avviso bonario telematico all'intermediario: 90 gg", () => {
     const t = calcolaTermini({
       tipo: "avviso_bonario",
       dataNotifica: "2026-03-02",
       telematicoIntermediario: true,
     });
-    // 60 gg da 2026-03-02 → 2026-05-01 (festa del lavoro, venerdì) → sab/dom → 4/5.
-    expect(t.termini[0].scadenza).toBe("2026-05-04");
+    // 90 gg da 2026-03-02 → 2026-05-31 (domenica) → slitta a lunedì 1/6...
+    // che è la vigilia della Festa della Repubblica ma NON festivo: resta 1/6.
+    expect(t.termini[0].scadenza).toBe("2026-06-01");
+  });
+
+  it("avviso bonario da controllo formale (36-ter): riduzione a 2/3, non 1/3", () => {
+    const t = calcolaTermini({
+      tipo: "avviso_bonario",
+      dataNotifica: "2026-03-02",
+      esitoControlloFormale: true,
+    });
+    expect(t.termini[0].descrizione).toContain("2/3");
+    expect(t.opzioni.join("\n")).toContain("2/3");
   });
 
   it("accertamento: ricorso 60 gg con sospensione feriale", () => {

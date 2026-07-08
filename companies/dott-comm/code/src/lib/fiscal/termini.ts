@@ -11,10 +11,11 @@
  */
 import {
   ADESIONE_SOSPENSIONE_GG,
-  RATE_ADER_SEMPLICE,
   RATE_BONARIO_MAX,
+  rateAderSemplice,
   RIDUZIONE_SANZIONE_ACQUIESCENZA,
   RIDUZIONE_SANZIONE_BONARIO,
+  RIDUZIONE_SANZIONE_CONTROLLO_FORMALE,
   SOGLIA_ADER_SEMPLICE,
   SOSPENSIONE_BONARI,
   SOSPENSIONE_FERIALE,
@@ -92,17 +93,19 @@ function termine(params: {
 /**
  * Deriva i termini attivati dall'atto. `conAdesione` aggiunge la variante del
  * termine di ricorso sospeso +90 gg (istanza di accertamento con adesione);
- * `telematicoIntermediario` usa il termine lungo dell'avviso bonario.
+ * `telematicoIntermediario` usa il termine lungo dell'avviso bonario;
+ * `esitoControlloFormale` distingue l'esito 36-ter (riduzione a 2/3, non 1/3).
  */
 export function calcolaTermini(params: {
   tipo: TipoAtto;
   dataNotifica: string;
   telematicoIntermediario?: boolean;
   conAdesione?: boolean;
+  esitoControlloFormale?: boolean;
 }): TriageTermini {
   const { tipo, dataNotifica } = params;
   const feriale = {
-    finestre: [SOSPENSIONE_FERIALE],
+    finestre: [SOSPENSIONE_FERIALE.valore],
     etichette: [FERIALE_LABEL],
   };
   const termini: Termine[] = [];
@@ -111,28 +114,32 @@ export function calcolaTermini(params: {
   switch (tipo) {
     case "avviso_bonario": {
       const giorni = params.telematicoIntermediario
-        ? TERMINE_BONARIO_TELEMATICO_GG
-        : TERMINE_BONARIO_GG;
+        ? TERMINE_BONARIO_TELEMATICO_GG.valore
+        : TERMINE_BONARIO_GG.valore;
+      // 36-bis (controllo automatico) → 1/3; 36-ter (controllo formale) → 2/3.
+      const riduzione = params.esitoControlloFormale
+        ? { frazione: "2/3", fonte: RIDUZIONE_SANZIONE_CONTROLLO_FORMALE }
+        : { frazione: "1/3", fonte: RIDUZIONE_SANZIONE_BONARIO };
       termini.push(
         termine({
           chiave: "pagamento_agevolato",
-          descrizione: `Pagamento (o prima rata) con sanzione ridotta a 1/3 (${giorni} gg)`,
+          descrizione: `Pagamento (o prima rata) con sanzione ridotta a ${riduzione.frazione} (${giorni} gg)`,
           dataNotifica,
           giorni,
           perentorio: true,
           sospensioni: {
-            finestre: [SOSPENSIONE_BONARI],
+            finestre: [SOSPENSIONE_BONARI.valore],
             etichette: [BONARI_LABEL],
           },
           nota: params.telematicoIntermediario
-            ? "Termine lungo: esito reso disponibile in via telematica all'intermediario (art. 2-bis D.L. 203/2005)."
+            ? "Termine lungo: esito reso disponibile in via telematica all'intermediario (art. 2-bis D.L. 203/2005, come modificato dal D.Lgs. 108/2024)."
             : undefined,
         }),
       );
       opzioni.push(
         `Verificare la fondatezza: spesso è un F24 mal registrato o una compensazione non riconosciuta — se errato, istanza di rettifica via CIVIS (non sospende il termine).`,
-        `Pagare con sanzione ridotta a 1/3 (${Math.round(RIDUZIONE_SANZIONE_BONARIO * 100)}% invece della piena) entro il termine.`,
-        `Rateizzare fino a ${RATE_BONARIO_MAX} rate trimestrali (art. 3-bis D.Lgs. 462/1997): la prima rata entro lo stesso termine.`,
+        `Pagare con sanzione ridotta a ${riduzione.frazione} della piena entro il termine (${riduzione.fonte.fonte}).`,
+        `Rateizzare fino a ${RATE_BONARIO_MAX.valore} rate trimestrali (${RATE_BONARIO_MAX.fonte}): la prima rata entro lo stesso termine.`,
       );
       break;
     }
@@ -160,9 +167,9 @@ export function calcolaTermini(params: {
       termini.push(
         termine({
           chiave: "ricorso",
-          descrizione: `Ricorso alla Corte di Giustizia Tributaria (${TERMINE_RICORSO_GG} gg)`,
+          descrizione: `Ricorso alla Corte di Giustizia Tributaria (${TERMINE_RICORSO_GG.valore} gg)`,
           dataNotifica,
-          giorni: TERMINE_RICORSO_GG,
+          giorni: TERMINE_RICORSO_GG.valore,
           perentorio: true,
           sospensioni: feriale,
         }),
@@ -170,22 +177,22 @@ export function calcolaTermini(params: {
           chiave: "acquiescenza",
           descrizione: `Acquiescenza: pagamento con sanzioni ridotte a 1/3 entro il termine di ricorso`,
           dataNotifica,
-          giorni: TERMINE_RICORSO_GG,
+          giorni: TERMINE_RICORSO_GG.valore,
           perentorio: true,
           sospensioni: feriale,
-          nota: `Riduzione sanzioni a ${Math.round(RIDUZIONE_SANZIONE_ACQUIESCENZA * 100)}% (art. 15 D.Lgs. 218/1997), rinunciando a impugnare.`,
+          nota: `Riduzione sanzioni a 1/3 (${RIDUZIONE_SANZIONE_ACQUIESCENZA.fonte}), rinunciando a impugnare.`,
         }),
       );
       if (params.conAdesione) {
         termini.push(
           termine({
             chiave: "ricorso_con_adesione",
-            descrizione: `Ricorso con istanza di adesione presentata (+${ADESIONE_SOSPENSIONE_GG} gg di sospensione)`,
+            descrizione: `Ricorso con istanza di adesione presentata (+${ADESIONE_SOSPENSIONE_GG.valore} gg di sospensione)`,
             dataNotifica,
-            giorni: TERMINE_RICORSO_GG + ADESIONE_SOSPENSIONE_GG,
+            giorni: TERMINE_RICORSO_GG.valore + ADESIONE_SOSPENSIONE_GG.valore,
             perentorio: true,
             sospensioni: feriale,
-            nota: "L'istanza di adesione sospende il termine di ricorso per 90 gg (art. 6 D.Lgs. 218/1997), cumulabili con la feriale.",
+            nota: "L'istanza di adesione sospende il termine di ricorso per 90 gg (art. 6 c.3 D.Lgs. 218/1997), automatica alla presentazione, cumulabile con la feriale.",
           }),
         );
       }
@@ -202,24 +209,27 @@ export function calcolaTermini(params: {
       termini.push(
         termine({
           chiave: "pagamento",
-          descrizione: `Pagamento delle somme iscritte a ruolo (${TERMINE_CARTELLA_GG} gg)`,
+          descrizione: `Pagamento delle somme iscritte a ruolo (${TERMINE_CARTELLA_GG.valore} gg)`,
           dataNotifica,
-          giorni: TERMINE_CARTELLA_GG,
+          giorni: TERMINE_CARTELLA_GG.valore,
           perentorio: true,
           nota: "Oltre il termine maturano interessi di mora e possono partire azioni esecutive/cautelari.",
         }),
         termine({
           chiave: "ricorso",
-          descrizione: `Ricorso contro la cartella per vizi propri (${TERMINE_RICORSO_GG} gg)`,
+          descrizione: `Ricorso contro la cartella per vizi propri (${TERMINE_RICORSO_GG.valore} gg)`,
           dataNotifica,
-          giorni: TERMINE_RICORSO_GG,
+          giorni: TERMINE_RICORSO_GG.valore,
           perentorio: true,
           sospensioni: feriale,
         }),
       );
+      // Le rate massime dipendono dall'anno di presentazione dell'istanza:
+      // qui si assume un'istanza contestuale alla notifica.
+      const rateAder = rateAderSemplice(dataNotifica);
       opzioni.push(
         "Verificare legittimità: decadenza/prescrizione, vizi di notifica degli atti presupposti, pagamenti già eseguiti.",
-        `Rateizzazione AdE-Riscossione: fino a ${RATE_ADER_SEMPLICE} rate mensili su semplice richiesta sotto €${SOGLIA_ADER_SEMPLICE.toLocaleString("it-IT")} (DA VERIFICARE lo scaglione vigente); la richiesta blocca le azioni esecutive.`,
+        `Rateizzazione AdE-Riscossione: fino a ${rateAder.valore} rate mensili su semplice richiesta sotto €${SOGLIA_ADER_SEMPLICE.valore.toLocaleString("it-IT")} (${rateAder.fonte}${rateAder.nota ? ` — ${rateAder.nota}` : ""}); la richiesta blocca le azioni esecutive.`,
         "Sospensione legale (istanza ex L. 228/2012) se il ruolo è già annullato/pagato/prescritto.",
       );
       break;
@@ -229,9 +239,9 @@ export function calcolaTermini(params: {
       termini.push(
         termine({
           chiave: "pagamento",
-          descrizione: `Pagamento intimato (${TERMINE_INTIMAZIONE_GG} gg, art. 50 DPR 602/1973)`,
+          descrizione: `Pagamento intimato (${TERMINE_INTIMAZIONE_GG.valore} gg, art. 50 DPR 602/1973)`,
           dataNotifica,
-          giorni: TERMINE_INTIMAZIONE_GG,
+          giorni: TERMINE_INTIMAZIONE_GG.valore,
           perentorio: true,
           nota: "Decorso il termine, l'esecuzione forzata può iniziare senza altri avvisi.",
         }),
@@ -247,9 +257,9 @@ export function calcolaTermini(params: {
       termini.push(
         termine({
           chiave: "pagamento_o_istanza",
-          descrizione: `Pagamento o istanza per evitare il fermo (${TERMINE_PREAVVISO_FERMO_GG} gg)`,
+          descrizione: `Pagamento o istanza per evitare il fermo (${TERMINE_PREAVVISO_FERMO_GG.valore} gg)`,
           dataNotifica,
-          giorni: TERMINE_PREAVVISO_FERMO_GG,
+          giorni: TERMINE_PREAVVISO_FERMO_GG.valore,
           perentorio: true,
           nota: "Il bene strumentale all'attività può essere escluso dal fermo su istanza documentata.",
         }),

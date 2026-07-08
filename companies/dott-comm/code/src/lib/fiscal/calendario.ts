@@ -53,36 +53,45 @@ export function pasqua(anno: number): string {
   return toISO(anno, mese, giorno);
 }
 
-/** Festività nazionali fisse (MM-DD). */
-const FESTIVITA_FISSE = new Set([
-  "01-01", // Capodanno
-  "01-06", // Epifania
-  "04-25", // Liberazione
-  "05-01", // Festa del lavoro
-  "06-02", // Repubblica
-  "08-15", // Ferragosto
-  "11-01", // Ognissanti
-  "12-08", // Immacolata
-  "12-25", // Natale
-  "12-26", // Santo Stefano
-]);
+/**
+ * Festività nazionali fisse (MM-DD), con eventuale anno di decorrenza per
+ * quelle introdotte in corsa (`dalAnno`).
+ */
+const FESTIVITA_FISSE: ReadonlyArray<{ mmdd: string; dalAnno?: number }> = [
+  { mmdd: "01-01" }, // Capodanno
+  { mmdd: "01-06" }, // Epifania
+  { mmdd: "04-25" }, // Liberazione
+  { mmdd: "05-01" }, // Festa del lavoro
+  { mmdd: "06-02" }, // Repubblica
+  { mmdd: "08-15" }, // Ferragosto
+  { mmdd: "10-04", dalAnno: 2026 }, // San Francesco d'Assisi (L. 151/2025, dal 1/1/2026)
+  { mmdd: "11-01" }, // Ognissanti
+  { mmdd: "12-08" }, // Immacolata
+  { mmdd: "12-25" }, // Natale
+  { mmdd: "12-26" }, // Santo Stefano
+];
 
 /**
  * Vero se la data è domenica o festività nazionale (incluso il lunedì
- * dell'Angelo). NB: i patroni locali non sono considerati.
+ * dell'Angelo). NB: i patroni locali non sono considerati; il Venerdì Santo
+ * NON è festa nazionale in Italia.
  */
 export function isFestivo(dataISO: string): boolean {
   if (giornoSettimana(dataISO) === 0) return true;
   const [anno] = parti(dataISO);
-  if (FESTIVITA_FISSE.has(dataISO.slice(5))) return true;
+  const mmdd = dataISO.slice(5);
+  if (FESTIVITA_FISSE.some((f) => f.mmdd === mmdd && (f.dalAnno === undefined || anno >= f.dalAnno)))
+    return true;
   return dataISO === aggiungiGiorni(pasqua(anno), 1); // Pasquetta
 }
 
 /**
  * Slitta un termine che cade in giorno festivo al primo giorno lavorativo
- * successivo. Di default anche il sabato slitta (regola generale sia per i
- * versamenti — art. 6, c. 8, D.L. 330/1994 e art. 18 D.Lgs. 241/1997 — sia per
- * i termini processuali — art. 155 c.p.c.). DA VERIFICARE per casi particolari.
+ * successivo. Di default anche il sabato slitta: per i versamenti è regola
+ * generale (art. 6, c. 8, D.L. 330/1994 e art. 18 D.Lgs. 241/1997, estesa a
+ * tutte le scadenze fiscali da art. 7 c.1 lett. h D.L. 70/2011); per i termini
+ * processuali l'art. 155 c.5 c.p.c. la limita agli atti svolti FUORI udienza —
+ * per i termini di deposito/impugnazione calcolati qui il risultato coincide.
  */
 export function slittaSeFestivo(
   dataISO: string,

@@ -6,6 +6,7 @@ import {
   ACCONTO_PERCENTUALE,
   ACCONTO_SOGLIA_MINIMA,
   ACCONTO_SOGLIA_RATEIZZO,
+  ACCONTO_SOGLIA_RATEIZZO_ISA,
   PREVISIONALE_TOLLERANZA,
   SANZIONE_OMESSO_VERSAMENTO,
   SCADENZA_SALDO_ACCONTO,
@@ -44,8 +45,9 @@ export type CalcoloAcconto = {
 
 /**
  * Acconto col metodo storico: 100% del rigo differenza (RN34), eventualmente
- * spezzato in due rate. Soggetti ISA/forfettari → 50/50; ordinari → 40/60.
- * Sotto €51,65 non dovuto; sotto €257,52 in unica soluzione (a novembre).
+ * spezzato in due rate. Soggetti ISA/forfettari → 50/50 sopra €206; ordinari →
+ * 40/60 sopra €257,52. Sotto €51,65 non dovuto; tra le soglie, unica soluzione
+ * a novembre.
  */
 export function calcolaAcconto(params: {
   base: number;
@@ -53,10 +55,10 @@ export function calcolaAcconto(params: {
   percentuale?: number;
 }): CalcoloAcconto {
   const { base, regime } = params;
-  const percentuale = params.percentuale ?? ACCONTO_PERCENTUALE;
+  const percentuale = params.percentuale ?? ACCONTO_PERCENTUALE.valore;
   const totale = roundEuro(base * percentuale);
 
-  if (totale < ACCONTO_SOGLIA_MINIMA) {
+  if (totale < ACCONTO_SOGLIA_MINIMA.valore) {
     return {
       dovuto: false,
       base,
@@ -67,8 +69,13 @@ export function calcolaAcconto(params: {
     };
   }
 
-  // Unica soluzione a novembre sotto la soglia di rateizzo.
-  if (totale < ACCONTO_SOGLIA_RATEIZZO) {
+  // Unica soluzione a novembre sotto la soglia di rateizzo (che dipende dal
+  // regime: €206 per ISA/forfettari, €257,52 per gli ordinari).
+  const paritario = REGIMI_SPLIT_PARITARIO.has(regime);
+  const sogliaRateizzo = paritario
+    ? ACCONTO_SOGLIA_RATEIZZO_ISA.valore
+    : ACCONTO_SOGLIA_RATEIZZO.valore;
+  if (totale < sogliaRateizzo) {
     return {
       dovuto: true,
       base,
@@ -76,12 +83,17 @@ export function calcolaAcconto(params: {
       totale,
       modalita: "unica_soluzione",
       split: "-",
-      prima: { quota: 1, importo: totale, scadenza: SCADENZA_SECONDO_ACCONTO },
+      prima: {
+        quota: 1,
+        importo: totale,
+        scadenza: SCADENZA_SECONDO_ACCONTO.valore,
+      },
     };
   }
 
-  const paritario = REGIMI_SPLIT_PARITARIO.has(regime);
-  const split = paritario ? SPLIT_ACCONTO_ISA : SPLIT_ACCONTO_ORDINARIO;
+  const split = paritario
+    ? SPLIT_ACCONTO_ISA.valore
+    : SPLIT_ACCONTO_ORDINARIO.valore;
   const primaImporto = roundEuro(totale * split.prima);
   // La seconda rata assorbe l'eventuale arrotondamento della prima.
   const secondaImporto = totale - primaImporto;
@@ -96,12 +108,12 @@ export function calcolaAcconto(params: {
     prima: {
       quota: split.prima,
       importo: primaImporto,
-      scadenza: SCADENZA_SALDO_ACCONTO,
+      scadenza: SCADENZA_SALDO_ACCONTO.valore,
     },
     seconda: {
       quota: split.seconda,
       importo: secondaImporto,
-      scadenza: SCADENZA_SECONDO_ACCONTO,
+      scadenza: SCADENZA_SECONDO_ACCONTO.valore,
     },
   };
 }
@@ -136,9 +148,9 @@ export function valutaPrevisionale(params: {
   tolleranza?: number;
   sanzione?: number;
 }): ValutazionePrevisionale {
-  const percentuale = params.percentuale ?? ACCONTO_PERCENTUALE;
-  const tolleranza = params.tolleranza ?? PREVISIONALE_TOLLERANZA;
-  const sanzione = params.sanzione ?? SANZIONE_OMESSO_VERSAMENTO;
+  const percentuale = params.percentuale ?? ACCONTO_PERCENTUALE.valore;
+  const tolleranza = params.tolleranza ?? PREVISIONALE_TOLLERANZA.valore;
+  const sanzione = params.sanzione ?? SANZIONE_OMESSO_VERSAMENTO.valore;
 
   const accontoRichiestoSuStima = roundEuro(
     params.impostaFinaleStimata * percentuale,

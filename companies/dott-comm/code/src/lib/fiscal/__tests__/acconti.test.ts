@@ -35,6 +35,14 @@ describe("calcolaAcconto", () => {
     }
   });
 
+  it("soglia rateizzo ISA/forfettari: €206, non €257,52", () => {
+    // €230 per un ISA → due rate (sopra €206); per un ordinario → unica soluzione.
+    const isa = calcolaAcconto({ base: 230, regime: "isa" });
+    expect(isa.modalita).toBe("due_rate");
+    const ordinario = calcolaAcconto({ base: 230, regime: "ordinario" });
+    expect(ordinario.modalita).toBe("unica_soluzione");
+  });
+
   it("la somma delle rate è sempre pari al totale, anche con arrotondamenti", () => {
     const r = calcolaAcconto({ base: 1001, regime: "isa" });
     expect((r.prima?.importo ?? 0) + (r.seconda?.importo ?? 0)).toBe(r.totale);

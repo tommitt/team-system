@@ -88,13 +88,13 @@ export function registerProspettoAcconti(server: McpServer) {
         acc.modalita === "due_rate" ? (acc.prima?.importo ?? 0) : 0;
       const dovutoScadenza = roundEuro(args.saldo + primaRataAcconto);
       const dovutoMaggiorato = roundEuro(
-        dovutoScadenza * (1 + MAGGIORAZIONE_DIFFERIMENTO),
+        dovutoScadenza * (1 + MAGGIORAZIONE_DIFFERIMENTO.valore),
       );
       const paga20Agosto = args.finestra === "20_agosto";
       const importoDaVersare = paga20Agosto ? dovutoMaggiorato : dovutoScadenza;
       const dataVersamento = paga20Agosto
-        ? SCADENZA_SALDO_ACCONTO_MAGGIORATA
-        : SCADENZA_SALDO_ACCONTO;
+        ? SCADENZA_SALDO_ACCONTO_MAGGIORATA.valore
+        : SCADENZA_SALDO_ACCONTO.valore;
 
       const L: string[] = [];
       L.push(
@@ -103,12 +103,12 @@ export function registerProspettoAcconti(server: McpServer) {
       L.push("");
 
       // --- Assunzioni -----------------------------------------------------
-      L.push("Assunzioni (DA VERIFICARE):");
+      L.push("Assunzioni (fonte e data di verifica dal registro costanti):");
       L.push(
         `- Acconto metodo storico = 100% del rigo differenza; split ${acc.split === "-" ? "n/d" : acc.split}.`,
       );
       L.push(
-        "- Scadenza 20/7/2026 senza maggiorazione (proroga D.L. 89/2026); 20/8/2026 con +0,80%.",
+        `- Scadenza ${SCADENZA_SALDO_ACCONTO.valore} senza maggiorazione; ${SCADENZA_SALDO_ACCONTO_MAGGIORATA.valore} con +0,80% (${MAGGIORAZIONE_DIFFERIMENTO.fonte}; verificato il ${MAGGIORAZIONE_DIFFERIMENTO.verificatoIl}).`,
       );
       L.push("");
 
