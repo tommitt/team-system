@@ -17,10 +17,28 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://www.dottcomm.dev";
+const siteTitle = "DottComm — L’estensione di Claude per i Commercialisti";
+const siteDescription =
+  "Aggiunge a Claude gli strumenti dello studio (F24, solleciti, scadenze, ravvedimenti) e prepara il lavoro ripetitivo pronto da rivedere. Tu controlli, correggi e approvi.";
+
 export const metadata: Metadata = {
-  title: "DottComm | Un agente AI che lavora davvero per il tuo studio",
-  description:
-    "F24, solleciti, quadrature, comunicazioni: DottComm prepara il lavoro ripetitivo dello studio commercialista. Tu controlli, correggi e approvi.",
+  metadataBase: new URL(siteUrl),
+  title: siteTitle,
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    locale: "it_IT",
+    url: siteUrl,
+    siteName: "DottComm",
+    title: siteTitle,
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({
