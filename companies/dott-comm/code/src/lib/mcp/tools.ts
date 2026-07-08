@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerOnboarding } from "./skills/onboarding";
 import { registerProspettoAcconti } from "./skills/prospetto-acconti";
 import { registerEstraiDocumenti } from "./skills/estrai-documenti";
+import { registerDetrazioneSanitaria } from "./skills/detrazione-sanitaria";
 import { registerRavvedimento } from "./skills/ravvedimento";
 import { registerTriageAtto } from "./skills/triage-atto";
 import { registerScadenzeCliente } from "./skills/scadenze-cliente";
@@ -33,6 +34,7 @@ export function registerTools(server: McpServer) {
   // Skills (procedure codificate)
   registerProspettoAcconti(server); // S12 — il calcolatore del versamento
   registerEstraiDocumenti(server); // S7  — normalizza/valida i dati estratti
+  registerDetrazioneSanitaria(server); // S13 — detrazione spese sanitarie (scontrini)
   registerRavvedimento(server); // S9  — versamenti tardivi
   registerTriageAtto(server); // S2/W1 paste-in — termini perentori degli atti
   registerScadenzeCliente(server); // T1 client-local — derivazione scadenzario

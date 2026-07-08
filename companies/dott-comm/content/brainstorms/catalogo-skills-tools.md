@@ -289,6 +289,21 @@ La **regola del gate** per i calcolatori futuri: si spedisce solo con costanti
 registrate (fonte + `verificatoIl`); i grandi dataset (ACI, addizionali
 comunali) non sono costanti — v0 chiede il dato all'utente.
 
+**Aggiornamento 2026-07-07 — S13 `detrazione_sanitaria` (estrazione scontrini).**
+Costruita la capability spese sanitarie, servita via MCP (tool + prompt-skill,
+non repo-skill): tool gated `detrazione_sanitaria` (subtotali E1–E5, franchigia
+unica €129,11 sul pool E1+E2, E3/E4/E5 senza franchigia, E25 come deduzione a
+parte, tracciabilità, rimborsi, rateizzazione, foglio in CSV con schema colonne
+configurabile) + prompt-procedura `metodo_estrazione_spese_sanitarie` (chiedi-e-
+ricorda fonte documenti e destinazione calcolo, estrai con la vista, chiama il
+tool, scrivi il foglio) + `convenzione_studio_db` estesa (`studio/spese-sanitarie/`).
+Regole verificate sulle **istruzioni 730/2026** (periodo 2025), costanti
+registrate (ADR 0011). 116 test verdi. Decisione:
+[ADR 0012](../decisions/0012-estrazione-scontrini-detrazione-sanitaria.md); doc:
+[spese-sanitarie-detrazione](../knowledge/spese-sanitarie-detrazione.md). Colma
+la S7 sul lato medico-fiscale ed entra nella catena del 20/7 (la detrazione pesa
+sul saldo).
+
 Resta da fare: validazione col professionista (gate G-pilota), la famiglia
 calcolatori domande-spot (proposta: `simula_forfettario` e
 `dividendi_vs_compenso` gated, `deducibilita` come prompt ungated,

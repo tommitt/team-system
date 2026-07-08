@@ -50,6 +50,7 @@ describe("MCP end-to-end", () => {
         "onboarding",
         "prospetto_acconti",
         "estrai_documenti",
+        "detrazione_sanitaria",
         "ravvedimento",
         "triage_atto",
         "scadenze_cliente",
@@ -82,6 +83,60 @@ describe("MCP end-to-end", () => {
     });
     expect(testo).toContain("2026-10-23"); // 60 gg + sospensione estiva bonari
     expect(testo).toContain("250,00 €"); // sanzione ridotta a 1/3
+  });
+
+  it("detrazione_sanitaria: subtotali per rigo, franchigia, scarti e studio-db", async () => {
+    const testo = await chiama("detrazione_sanitaria", {
+      cliente: "Mario Rossi",
+      anno: 2025,
+      voci: [
+        { importo: 500, rigo: "E1c2", descrizione: "farmaci" },
+        {
+          importo: 40,
+          rigo: "E1c2",
+          detraibile: false,
+          descrizione: "integratore",
+        },
+        {
+          importo: 200,
+          rigo: "E1c2",
+          tracciabilita_richiesta: true,
+          pagamento_tracciabile: false,
+          descrizione: "visita privata in contanti",
+        },
+      ],
+    });
+    expect(testo).toContain("E1 col. 2");
+    // 19% × (500 − 129,11) = 70,4691 → 70,47 €
+    expect(testo).toContain("70,47 €");
+    expect(testo).toContain("Tracciabilità mancante");
+    expect(testo).toContain("Non detraibili");
+    expect(testo).toContain("studio/spese-sanitarie/mario-rossi-2025.csv");
+    expect(testo).toContain("```csv"); // il foglio pronto da salvare/importare
+    expect(testo).toContain("DETRAZIONE STIMATA");
+    expect(testo).toContain("BOZZA");
+  });
+
+  it("detrazione_sanitaria: schema del foglio configurabile via `colonne`", async () => {
+    const testo = await chiama("detrazione_sanitaria", {
+      cliente: "Rossi",
+      anno: 2025,
+      colonne: ["data", "descrizione", "importo", "rigo", "codice_fiscale", "note"],
+      voci: [
+        {
+          importo: 300,
+          rigo: "E1c2",
+          data: "2025-04-01",
+          descrizione: "occhiali da vista",
+          codice_fiscale: "RSSMRA80A01H501U",
+          note: "dispositivo medico CE",
+        },
+      ],
+    });
+    // Intestazione del CSV nell'ordine richiesto, con le colonne scelte e non altre.
+    expect(testo).toContain("Data,Descrizione,Importo,Rigo,Codice fiscale,Note");
+    expect(testo).not.toContain("Tracciabilita_richiesta"); // colonna non richiesta
+    expect(testo).toContain("RSSMRA80A01H501U");
   });
 
   it("scadenze_cliente: deriva lo scadenzario nel periodo", async () => {
