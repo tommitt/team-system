@@ -3,11 +3,15 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerGatedTool } from "../register-gated-tool";
 
 /**
- * L1 `raccolta_documenti` — il sollecito eterno (area 09, il fossato). Tiene una
- * checklist per tipo-cliente, la confronta con quanto è arrivato e produce una
- * bozza di sollecito SPECIFICO ("mancano: estratto conto Q4, ...") + la lista di
- * cosa manca. Lo stato (cosa è arrivato) resta nei file dello studio, gestiti da
- * Claude Code: il tool è puro, non persiste nulla lato server.
+ * L1 `raccolta_documenti` — il sollecito eterno (area 09, il fossato), in forma
+ * CAMPAGNA: prende il portafoglio (o un sottoinsieme) e per ogni cliente
+ * confronta la checklist del suo tipo con quanto è arrivato, restituendo la
+ * dashboard di campagna + una bozza di sollecito SPECIFICO per ciascun cliente
+ * incompleto. Lo stato (cosa è arrivato, chi è stato sollecitato) resta nei
+ * file dello studio — `studio/raccolta/<campagna>.md`, vedi prompt
+ * `convenzione_studio_db` — gestiti dal client: il tool è puro, non persiste
+ * nulla lato server. Il client può derivare `documenti_presenti` scandendo la
+ * cartella documenti dello studio invece di chiederlo all'utente.
  */
 
 type VoceChecklist = { chiave: string; label: string };
@@ -55,82 +59,127 @@ export function registerRaccoltaDocumenti(server: McpServer) {
   registerGatedTool(
     server,
     "raccolta_documenti",
-    "Confronta la checklist documenti del tipo-cliente con quanto è già arrivato e restituisce " +
-      "cosa manca + una bozza di sollecito specifico da inviare al cliente. Pensato per la " +
-      "campagna di raccolta pre-20/7. Lo stato di cosa è arrivato lo tieni nei file dello studio: " +
-      "passa qui l'elenco `documenti_presenti`. Tipi cliente: forfettario, professionista, " +
+    "Campagna di raccolta documenti sul portafoglio: per ogni cliente confronta la checklist " +
+      "del suo tipo con quanto è già arrivato e restituisce la dashboard (chi manca di cosa) + " +
+      "una bozza di sollecito specifico per ogni cliente incompleto. Un cliente solo = array di " +
+      "uno. Lo stato della campagna vive in `studio/raccolta/<campagna>.md` (prompt " +
+      "`convenzione_studio_db`); deriva `documenti_presenti` scandendo la cartella documenti " +
+      "dello studio quando possibile. Tipi cliente: forfettario, professionista, " +
       "impresa_semplificata, impresa_ordinaria, persona_fisica.",
     {
-      cliente: z.string().describe("Nome del cliente"),
-      tipo_cliente: z
-        .enum([
-          "forfettario",
-          "professionista",
-          "impresa_semplificata",
-          "impresa_ordinaria",
-          "persona_fisica",
-        ])
-        .describe("Tipo cliente: seleziona la checklist"),
-      documenti_presenti: z
-        .array(z.string())
-        .default([])
-        .describe(
-          "Chiavi o etichette dei documenti già arrivati (es. 'estratti_conto'). Il resto è considerato mancante.",
-        ),
-      note_extra: z
-        .array(z.string())
-        .default([])
-        .describe("Voci mancanti aggiuntive fuori checklist (es. 'fattura ACME di dicembre')"),
+      campagna: z
+        .string()
+        .default("raccolta documenti")
+        .describe("Nome della campagna (es. 'dichiarativi 2026'): dà il nome al file di stato"),
       scadenza: z
         .string()
         .default("20 luglio 2026")
-        .describe("Scadenza da citare nel sollecito"),
+        .describe("Scadenza da citare nei solleciti"),
+      clienti: z
+        .array(
+          z.object({
+            nome: z.string().describe("Nome del cliente"),
+            tipo_cliente: z
+              .enum([
+                "forfettario",
+                "professionista",
+                "impresa_semplificata",
+                "impresa_ordinaria",
+                "persona_fisica",
+              ])
+              .describe("Tipo cliente: seleziona la checklist"),
+            documenti_presenti: z
+              .array(z.string())
+              .default([])
+              .describe(
+                "Chiavi o etichette dei documenti già arrivati (es. 'estratti_conto'). Il resto è considerato mancante.",
+              ),
+            note_extra: z
+              .array(z.string())
+              .default([])
+              .describe(
+                "Voci mancanti aggiuntive fuori checklist (es. 'fattura ACME di dicembre')",
+              ),
+          }),
+        )
+        .min(1)
+        .describe("I clienti della campagna (uno o molti)"),
     },
-    async ({ cliente, tipo_cliente, documenti_presenti, note_extra, scadenza }) => {
-      const checklist = CHECKLIST[tipo_cliente];
-      const presenti = new Set(
-        documenti_presenti.map((d) => d.trim().toLowerCase()),
-      );
-      const isPresente = (v: VoceChecklist) =>
-        presenti.has(v.chiave.toLowerCase()) ||
-        presenti.has(v.label.toLowerCase());
+    async ({ campagna, scadenza, clienti }) => {
+      type Esito = {
+        nome: string;
+        tipo: string;
+        arrivati: number;
+        totale: number;
+        mancanti: string[];
+      };
 
-      const mancanti = checklist.filter((v) => !isPresente(v));
-      const arrivati = checklist.filter(isPresente);
-      const mancantiLabels = [...mancanti.map((v) => v.label), ...note_extra];
+      const esiti: Esito[] = clienti.map((c) => {
+        const checklist = CHECKLIST[c.tipo_cliente];
+        const presenti = new Set(
+          c.documenti_presenti.map((d) => d.trim().toLowerCase()),
+        );
+        const isPresente = (v: VoceChecklist) =>
+          presenti.has(v.chiave.toLowerCase()) ||
+          presenti.has(v.label.toLowerCase());
+        const mancanti = [
+          ...checklist.filter((v) => !isPresente(v)).map((v) => v.label),
+          ...c.note_extra,
+        ];
+        return {
+          nome: c.nome,
+          tipo: c.tipo_cliente,
+          arrivati: checklist.filter(isPresente).length,
+          totale: checklist.length,
+          mancanti,
+        };
+      });
+
+      const incompleti = esiti.filter((e) => e.mancanti.length > 0);
+      const completi = esiti.length - incompleti.length;
 
       const L: string[] = [];
-      L.push(`RACCOLTA DOCUMENTI — ${cliente} (${tipo_cliente})`);
+      L.push(`CAMPAGNA RACCOLTA DOCUMENTI — ${campagna} (scadenza ${scadenza})`);
       L.push(
-        `Arrivati: ${arrivati.length}/${checklist.length}. Mancanti: ${mancantiLabels.length}.`,
+        `${esiti.length} clienti: ${completi} completi ✅ · ${incompleti.length} da sollecitare`,
       );
       L.push("");
 
-      if (mancantiLabels.length === 0) {
-        L.push("✅ Checklist completa: nessun sollecito necessario.");
-        return { content: [{ type: "text", text: L.join("\n") }] };
+      L.push("| Cliente | Tipo | Checklist | Mancanti |");
+      L.push("|---|---|---|---|");
+      for (const e of esiti) {
+        const stato =
+          e.mancanti.length === 0 ? "✅ completo" : e.mancanti.join("; ");
+        L.push(`| ${e.nome} | ${e.tipo} | ${e.arrivati}/${e.totale} | ${stato} |`);
+      }
+      L.push("");
+
+      for (const e of incompleti) {
+        L.push(`--- BOZZA SOLLECITO — ${e.nome} (da rivedere prima dell'invio) ---`);
+        L.push(`Oggetto: ${e.nome} — documenti mancanti per la scadenza del ${scadenza}`);
+        L.push("");
+        L.push(`Gentile ${e.nome},`);
+        L.push(
+          `per completare i calcoli in vista della scadenza del ${scadenza} ci mancano ancora alcuni documenti:`,
+        );
+        L.push("");
+        for (const m of e.mancanti) L.push(`• ${m}`);
+        L.push("");
+        L.push(
+          "Ti chiediamo di inviarceli il prima possibile per evitare ritardi. Restiamo a disposizione per qualsiasi chiarimento.",
+        );
+        L.push("");
+        L.push("Un cordiale saluto,");
+        L.push("[Studio]");
+        L.push("--- FINE BOZZA ---");
+        L.push("");
       }
 
-      L.push("Mancano:");
-      for (const m of mancantiLabels) L.push(`- ${m}`);
-      L.push("");
-      L.push("--- BOZZA SOLLECITO (da rivedere prima dell'invio) ---");
-      L.push(`Oggetto: ${cliente} — documenti mancanti per la scadenza del ${scadenza}`);
-      L.push("");
-      L.push(`Gentile ${cliente},`);
       L.push(
-        `per completare i calcoli in vista della scadenza del ${scadenza} ci mancano ancora alcuni documenti:`,
+        `Aggiorna \`studio/raccolta/${campagna.toLowerCase().replace(/\s+/g, "-")}.md\` ` +
+          "(colonne Cliente | Mancanti | Sollecitato il | Stato) con l'esito: data del sollecito " +
+          "per gli inviati, `completo` per chi ha consegnato tutto.",
       );
-      L.push("");
-      for (const m of mancantiLabels) L.push(`• ${m}`);
-      L.push("");
-      L.push(
-        "Ti chiediamo di inviarceli il prima possibile per evitare ritardi. Restiamo a disposizione per qualsiasi chiarimento.",
-      );
-      L.push("");
-      L.push("Un cordiale saluto,");
-      L.push("[Studio]");
-      L.push("--- FINE BOZZA ---");
 
       return { content: [{ type: "text", text: L.join("\n") }] };
     },

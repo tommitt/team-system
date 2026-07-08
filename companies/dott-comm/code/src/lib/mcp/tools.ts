@@ -3,6 +3,8 @@ import { registerOnboarding } from "./skills/onboarding";
 import { registerProspettoAcconti } from "./skills/prospetto-acconti";
 import { registerEstraiDocumenti } from "./skills/estrai-documenti";
 import { registerRavvedimento } from "./skills/ravvedimento";
+import { registerTriageAtto } from "./skills/triage-atto";
+import { registerScadenzeCliente } from "./skills/scadenze-cliente";
 import { registerRaccoltaDocumenti } from "./loops/raccolta-documenti";
 import { registerComunicaVersamenti } from "./loops/comunica-versamenti";
 import { registerPrompts } from "./prompts";
@@ -32,8 +34,10 @@ export function registerTools(server: McpServer) {
   registerProspettoAcconti(server); // S12 — il calcolatore del versamento
   registerEstraiDocumenti(server); // S7  — normalizza/valida i dati estratti
   registerRavvedimento(server); // S9  — versamenti tardivi
+  registerTriageAtto(server); // S2/W1 paste-in — termini perentori degli atti
+  registerScadenzeCliente(server); // T1 client-local — derivazione scadenzario
 
-  // Loops (area 09 — il fossato)
+  // Loops (area 09 — il fossato), in forma campagna sul portafoglio
   registerRaccoltaDocumenti(server); // L1 — il sollecito
   registerComunicaVersamenti(server); // L2 — comunicazione versamenti
 

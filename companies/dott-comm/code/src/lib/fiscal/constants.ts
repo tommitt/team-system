@@ -140,6 +140,69 @@ export const SCAGLIONI_RAVVEDIMENTO = [
   },
 ] as const;
 
+// --- Termini sugli atti notificati (triage_atto) ---------------------------
+
+/**
+ * Sospensione feriale dei termini processuali: 1–31 agosto (art. 1 L. 742/1969).
+ * Si applica ai termini di impugnazione (ricorso alla Corte di Giustizia
+ * Tributaria), NON ai termini di pagamento amministrativi.
+ */
+export const SOSPENSIONE_FERIALE = { inizio: "08-01", fine: "08-31" } as const;
+
+/**
+ * Sospensione estiva dei termini di pagamento delle somme da controlli
+ * automatizzati/formali (avvisi bonari): 1 agosto – 4 settembre
+ * (art. 7-quater, c. 17, D.L. 193/2016). DA VERIFICARE il perimetro esatto.
+ */
+export const SOSPENSIONE_BONARI = { inizio: "08-01", fine: "09-04" } as const;
+
+/** Termine ordinario per il ricorso tributario (art. 21 D.Lgs. 546/1992). */
+export const TERMINE_RICORSO_GG = 60;
+
+/**
+ * Sospensione del termine di ricorso per istanza di accertamento con adesione:
+ * +90 giorni (art. 6, c. 3, D.Lgs. 218/1997). Cumulabile con la feriale.
+ */
+export const ADESIONE_SOSPENSIONE_GG = 90;
+
+/**
+ * Avviso bonario (36-bis/36-ter): pagamento con sanzione ridotta a 1/3 entro
+ * 30 giorni (60 se l'esito è reso disponibile in via telematica
+ * all'intermediario — art. 2-bis D.L. 203/2005). DA VERIFICARE.
+ */
+export const TERMINE_BONARIO_GG = 30;
+export const TERMINE_BONARIO_TELEMATICO_GG = 60;
+/** Riduzione della sanzione per definizione dell'avviso bonario (a 1/3). */
+export const RIDUZIONE_SANZIONE_BONARIO = 1 / 3;
+/**
+ * Rateazione degli avvisi bonari: fino a 20 rate trimestrali di pari importo
+ * (art. 3-bis D.Lgs. 462/1997, come esteso dalla L. 234/2021). DA VERIFICARE.
+ */
+export const RATE_BONARIO_MAX = 20;
+
+/** Cartella di pagamento: pagamento (o ricorso) entro 60 gg dalla notifica. */
+export const TERMINE_CARTELLA_GG = 60;
+/**
+ * Rateizzazione AdE-Riscossione su semplice richiesta: numero massimo di rate
+ * mensili per istanze fino a €120.000. ⚠️ DA VERIFICARE: il numero cresce per
+ * scaglioni temporali (riforma della riscossione, D.Lgs. 110/2024) — 84 rate
+ * per le istanze presentate nel 2025–2026.
+ */
+export const RATE_ADER_SEMPLICE = 84;
+export const SOGLIA_ADER_SEMPLICE = 120_000;
+
+/** Intimazione di pagamento: 5 giorni (art. 50 DPR 602/1973). */
+export const TERMINE_INTIMAZIONE_GG = 5;
+
+/** Preavviso di fermo amministrativo: 30 giorni (art. 86 DPR 602/1973). */
+export const TERMINE_PREAVVISO_FERMO_GG = 30;
+
+/**
+ * Acquiescenza all'avviso di accertamento: pagamento con sanzioni ridotte a
+ * 1/3 entro il termine di ricorso (art. 15 D.Lgs. 218/1997).
+ */
+export const RIDUZIONE_SANZIONE_ACQUIESCENZA = 1 / 3;
+
 // --- Disclaimer condiviso, in coda a ogni output di calcolo ---------------
 
 export const DISCLAIMER_BOZZA =

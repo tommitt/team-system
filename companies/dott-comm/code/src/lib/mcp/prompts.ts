@@ -3,9 +3,42 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 /**
  * MCP prompts — la parte "metodo + template" delle skill, che vive nel server ma
  * guida il client (Claude Code). Non consumano il gate di billing (sono
- * template, non chiamate a tool). S7 estrazione e L2 tono di comunicazione.
+ * template, non chiamate a tool). S7 estrazione, L2 tono di comunicazione,
+ * T1 convenzione studio-db (lo stato client-local, ADR 0003).
  */
 export function registerPrompts(server: McpServer) {
+  server.prompt(
+    "convenzione_studio_db",
+    "La convenzione `studio/` — i file markdown dello studio che fanno da database client-local " +
+      "(anagrafica, scadenzario, stato campagne). Il server non persiste nulla: lo stato vive qui.",
+    () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Mantieni lo stato dello studio in una cartella `studio/` nella workspace, in markdown (leggibile dal professionista, aggiornabile da te). Il server Dott. Comm. non salva MAI questi dati: sono dello studio.",
+              "",
+              "Struttura:",
+              "- `studio/clienti.md` — l'anagrafica: una tabella con colonne `Cliente | Regime | Forma | IVA | Sostituto | INPS art/comm | Immobili | Note`. È la fonte degli attributi per `scadenze_cliente` e per le campagne.",
+              "- `studio/scadenzario.md` — la matrice operativa: `Cliente | Scadenza | Adempimento | Assegnatario | Stato` (stati: `da fare`, `in corso`, `fatto`, `inviato`, `confermato`). Alimentato da `scadenze_cliente` e da `triage_atto`; ordinato per data.",
+              "- `studio/raccolta/<campagna>.md` — stato di una campagna di raccolta documenti: `Cliente | Mancanti | Sollecitato il | Stato`. Alimentato da `raccolta_documenti`.",
+              "- `studio/versamenti/<scadenza>.md` — stato delle comunicazioni di versamento: `Cliente | Importo | Canale | Inviata il | Confermata`. Alimentato da `comunica_versamenti`.",
+              "",
+              "Regole:",
+              "- Date sempre assolute (YYYY-MM-DD), mai relative.",
+              "- Una riga per item; aggiorna la riga esistente invece di duplicarla.",
+              "- Dopo ogni azione (sollecito inviato, pagamento confermato, atto registrato) aggiorna subito il file corrispondente: è l'audit trail dello studio.",
+              "- Prima di una campagna, leggi il file di stato per riprendere da dove si era rimasti.",
+              "- Per derivare `documenti_presenti` di `raccolta_documenti`, scandisci la cartella documenti dello studio (o l'export della casella email) invece di chiedere all'utente, quando possibile.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
+  );
+
   server.prompt(
     "metodo_estrazione_documenti",
     "Metodo per estrarre dati strutturati da ricevute, scontrini, fatture estere ed export " +
