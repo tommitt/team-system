@@ -2,7 +2,7 @@
 title: Dev setup guide — everything to configure by hand (Vercel, Better Auth, Supabase, Stripe)
 status: active
 owner: ttassi
-updated: 2026-07-07
+updated: 2026-07-08
 tags: [mcp, setup, runbook, vercel, better-auth, supabase, stripe, engineering]
 ---
 
@@ -11,6 +11,11 @@ tags: [mcp, setup, runbook, vercel, better-auth, supabase, stripe, engineering]
 The single ordered checklist of every **manual** step a developer must do in
 external dashboards to bring the Dott. Comm. app (site + MCP + billing) fully
 live. The code needs no changes — it reads everything from env vars.
+
+> **Just want to run it on your laptop?** This guide is the prod / external-
+> dashboards path. To run the whole app locally — local Postgres, magic-link
+> sign-in from the console, MCP + billing gate, no accounts — use
+> [local-dev-testing.md](./local-dev-testing.md) instead.
 
 Deep dives (how each layer works, debugging, gotchas):
 [mcp-auth-setup.md](./mcp-auth-setup.md) (auth) ·

@@ -14,6 +14,36 @@ Format:
 
 ---
 
+## 2026-07-08 — Loop di test locale end-to-end (DB locale + auth finta)
+
+- **Did:** reso testabile *tutto* l'app in locale senza account esterni, dopo la
+  migrazione a Better Auth self-hosted. Un solo Postgres locale (Supabase CLI)
+  serve i tre consumatori: Better Auth (via `pg`), il gate billing (via PostgREST
+  service_role) e la telemetria. Le migrazioni `00001–00005` — incluse tabelle
+  Better Auth (`00004`) e grant `service_role` (`00005`) — si applicano allo
+  start, quindi il rebuild-from-migrations funziona su un DB vergine. Due loop di
+  auth "finti": **sessione web** = magic link stampato in console (nessun
+  `RESEND_API_KEY`); **MCP** = identità finta via `MCP_DEV_USER_ID` +
+  `MCP_REQUIRE_AUTH=false` (loop OAuth reale documentato via MCP Inspector).
+  Verificato sullo stack reale: 4 righe billing seedate, 7 tabelle Better Auth,
+  grant presenti, `increment_usage`/insert `tool_events` OK via PostgREST col
+  service_role JWT locale.
+- **Changed:**
+  - **Codice (`code/`):** nuovo `supabase/seed.sql` (stati billing deterministici
+    `dev_trial`/`dev_active`/`dev_canceled`/`dev_trial_spent`, idempotente, gira
+    su `db:reset`); nuovo `.env.local.example` (wiring completo verso lo stack
+    locale) + `.gitignore` (`!.env.local.example`); script npm
+    `db:start`/`db:stop`/`db:reset`/`db:status` in `package.json`. Nessuna
+    modifica al codice applicativo — riusata la escape hatch `MCP_DEV_USER_ID`.
+  - **Knowledge:** nuovo runbook
+    [content/knowledge/local-dev-testing.md](content/knowledge/local-dev-testing.md);
+    pointer da [dev-setup-guide.md](content/knowledge/dev-setup-guide.md) (che
+    resta la checklist prod/dashboard) e una riga in `companies/dott-comm/CLAUDE.md`.
+- **Follow-ups:** nessun ADR (è devex/runbook, non una scelta architetturale —
+  le decisioni stanno già in ADR 0012/0007/0002). Auto-apply migrazioni in CI
+  ancora rinviato (ADR 0007). Il loop OAuth reale locale (Inspector → DCR →
+  consent) è documentato ma va provato una volta end-to-end.
+
 ## 2026-07-07 — Auth: da WorkOS AuthKit a Better Auth self-hosted (port su `main`)
 
 - **Did:** portato il lavoro del branch `migrate-auth-to-better-auth` (commit
