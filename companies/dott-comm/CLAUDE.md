@@ -30,13 +30,15 @@ which are tractable with AI, before committing to what to build first.
   since build cost is ~zero and the whole backlog can be built in parallel.
 - **Stack (MCP server).** The MCP server is a route handler inside the website's
   Next.js app (`code/`), deployed on Vercel in the same project; auth is OAuth
-  2.1 with WorkOS AuthKit as the Authorization Server. See
-  [ADR 0001](content/decisions/0001-mcp-in-nextjs-app-workos-auth.md) and
-  [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md). Note: this Next.js
+  2.1 with **self-hosted Better Auth** as the Authorization Server (in-process,
+  tables in the same Supabase Postgres; magic-link sign-in only). See
+  [ADR 0012](content/decisions/0012-mcp-auth-better-auth-self-hosted.md)
+  (supersedes [ADR 0001](content/decisions/0001-mcp-in-nextjs-app-workos-auth.md))
+  and [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md). Note: this Next.js
   (16.x) has breaking changes — read `code/AGENTS.md` and the bundled docs in
   `node_modules/next/dist/docs/` before writing app code.
-- **Billing.** Identity in WorkOS, money in Stripe, entitlement + usage in
-  Supabase; free trial = tool-call count; new MCP tools MUST register through
+- **Billing.** Identity in Better Auth (our own Postgres), money in Stripe,
+  entitlement + usage in Supabase; free trial = tool-call count; new MCP tools MUST register through
   `registerGatedTool` (`code/src/lib/mcp/tools.ts`) so they're metered. See
   [ADR 0002](content/decisions/0002-billing-supabase-stripe-usage-trial.md) and
   [billing-setup.md](content/knowledge/billing-setup.md).

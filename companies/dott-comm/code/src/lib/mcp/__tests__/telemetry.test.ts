@@ -27,7 +27,7 @@ describe("recordToolEvent", () => {
       argsKeys: ["importo", "data_scadenza"],
     });
     expect(insert).toHaveBeenCalledExactlyOnceWith("tool_events", {
-      workos_user_id: "user_1",
+      user_id: "user_1",
       tool: "ravvedimento",
       session_id: "sess_1",
       outcome: "ok",

@@ -484,3 +484,40 @@ footer { padding: clamp(40px, 5vw, 64px) var(--pad); border-top: 1px solid var(-
   [data-reveal] { opacity: 1; transform: none; transition: none; }
   .deco, .hero-card { animation: none; }
 }
+
+/* Sign-in / consent (Better Auth auth pages) */
+.billing-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.billing-input:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+.consent-scopes {
+  list-style: none;
+  margin: 4px auto 20px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.consent-scopes li {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--violet);
+  background: rgba(91, 79, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.consent-deny {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}

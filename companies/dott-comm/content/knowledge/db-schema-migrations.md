@@ -2,7 +2,7 @@
 title: Database schema & migrations — declarative schemas + Supabase CLI
 status: active
 owner: ttassi
-updated: 2026-07-07
+updated: 2026-07-08
 tags: [supabase, migrations, schema, postgres, devex, engineering, runbook]
 ---
 
@@ -20,12 +20,16 @@ schema holds **billing + product signal only** — never fiscal data
 ```
 code/supabase/
 ├── schemas/       ← SOURCE OF TRUTH. Desired end-state, hand-edited.
-│   ├── 01_billing.sql     users_billing + increment_usage() RPC + RLS
-│   └── 02_telemetry.sql   tool_events + feedback + RLS
-├── migrations/    ← DERIVED history. `db diff` appends timestamped files here.
+│   ├── 01_billing.sql     users_billing + increment_usage() RPC + grants + RLS
+│   ├── 02_telemetry.sql   tool_events + feedback + RLS
+│   └── 03_auth.sql        Better Auth tables (user/session/oauth*) + RLS
+├── migrations/    ← DERIVED history, sequential NNNNN_ names. `db diff` writes a
+│   │                timestamped file; rename it to the next number before committing.
 │   ├── 00001_users_billing.sql      ┐ legacy, applied by hand — kept as-is,
 │   ├── 00002_daily_usage.sql        │ they are the baseline the tracking
-│   └── 00003_telemetry_feedback.sql ┘ table must match. Never edit/rename.
+│   ├── 00003_telemetry_feedback.sql ┘ table must match. Never edit/rename.
+│   ├── 00004_better_auth_and_user_id.sql       Better Auth + workos→user_id rename
+│   └── 00005_service_role_grants.sql           service_role DML grants (all tables)
 └── config.toml    schema_paths = ["./schemas/*.sql"]
 ```
 
@@ -104,9 +108,15 @@ file.
 
 - **Don't hand-edit or rename `00001–00003`.** They're the applied history the
   baseline matches; renaming to timestamps would break `migration repair`.
-- **`db diff` uses [migra] under the hood** — review every generated migration.
-  It doesn't capture everything perfectly (e.g. some `comment on`, certain
-  ownership/grants); add anything missing with `npm run db:new`.
+- **New migrations use sequential `NNNNN_` names.** `db diff` emits a timestamped
+  filename; rename it to the next number in sequence (`00004`, `00005`, …) before
+  committing so the history stays readable and ordered. Only name the *new* file —
+  never renumber already-applied ones.
+- **`db diff` uses the `pg-delta` engine** (current CLI) — review every generated
+  migration. It *does* capture grants now (`00005_service_role_grants.sql` collects
+  the `grant … to service_role` lines from `01_billing.sql` + `02_telemetry.sql`),
+  but it still isn't foolproof for every object (e.g. some `comment on`); add
+  anything missing with `npm run db:new`.
 - **Changing a function's return type needs a `drop` first.** `CREATE OR REPLACE
   FUNCTION` cannot change the return type / OUT-params (Postgres error 42P13) —
   precede it with `drop function if exists <name>(<argtypes>);` in the migration
@@ -118,5 +128,3 @@ file.
   service-role client in `src/lib/billing/supabase.ts` is typed `SupabaseClient<Database>`.
 - **CI is deferred** (ADR 0007): applying migrations is a manual `npm run db:push`
   gate for now. Auto-apply on merge is a future follow-up.
-
-[migra]: https://databaseci.com/docs/migra

@@ -3,17 +3,17 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
  * Short-lived signed token that lets a paywalled MCP user reach Stripe Checkout
- * WITHOUT re-authenticating through AuthKit.
+ * WITHOUT re-authenticating.
  *
- * The MCP server already verified the user's JWT, so at paywall time it knows
- * the WorkOS user id. We sign `{ sub, exp }` with a server secret and put it in
- * the upgrade URL (`/upgrade?t=…`). The upgrade page verifies it and starts a
- * checkout bound to that user id.
+ * The MCP server already verified the user's access token, so at paywall time
+ * it knows the user id. We sign `{ sub, exp }` with a server secret and put it
+ * in the upgrade URL (`/upgrade?t=…`). The upgrade page verifies it and starts
+ * a checkout bound to that user id.
  *
  * Scope is deliberately narrow: this token authorizes STARTING a checkout only.
  * The Stripe customer portal (cancel / refund / invoices / change card) stays
- * behind full AuthKit login — a leaked token can at most let someone pay for
- * this user's subscription with their own card.
+ * behind a full sign-in — a leaked token can at most let someone pay for this
+ * user's subscription with their own card.
  */
 
 const TTL_SECONDS = 15 * 60;
@@ -21,7 +21,7 @@ const TTL_SECONDS = 15 * 60;
 function secret(): string | null {
   return (
     process.env.UPGRADE_TOKEN_SECRET ??
-    process.env.WORKOS_COOKIE_PASSWORD ??
+    process.env.BETTER_AUTH_SECRET ??
     null
   );
 }

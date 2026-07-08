@@ -14,6 +14,52 @@ Format:
 
 ---
 
+## 2026-07-07 — Auth: da WorkOS AuthKit a Better Auth self-hosted (port su `main`)
+
+- **Did:** portato il lavoro del branch `migrate-auth-to-better-auth` (commit
+  `119be48`) su `main`, riapplicandolo file-per-file sopra l'evoluzione di `main`
+  (sorgenti sotto `src/`, schemi dichiarativi, MCP con instructions/telemetry).
+  Motivo: WorkOS costa ~$100/mese a traffico zero per la feature MCP/DCR, e
+  l'identità in WorkOS lascia Supabase cieco lato utente. Due scostamenti dal
+  branch: **solo magic link** (niente Google — nessun IdP esterno da configurare)
+  e **tabelle Better Auth via schema dichiarativo** (non `@better-auth/cli
+  migrate`), coerente con ADR 0007.
+- **Changed:**
+  - **Codice (`code/`):** deps (`better-auth`/`pg`/`resend` in, `@workos-inc/…`
+    e `jose` out); `src/lib/auth.ts` + `auth-client.ts` + catch-all
+    `api/auth/[...all]`; `/sign-in` + `/consent` (UI proprietarie) + stili
+    `globals.css`; `src/proxy.ts` (guardia ottimistica `getSessionCookie`, solo
+    `/account`); `account`/`upgrade`/`actions` letti via `auth.api.getSession`;
+    MCP route verifica per **introspezione** (`getMcpSession`, token opachi)
+    mantenendo `INSTRUCTIONS`; well-known protected-resource + nuovo
+    authorization-server; `check-oauth.mjs` versione Better Auth; rinominato
+    `workos_user_id` → `user_id` **ovunque** (billing gate/store/webhook +
+    telemetry `tool_events`/`feedback` + tipi generati; Stripe metadata →
+    `app_user_id`) — nessuna tabella conserva la chiave legacy; rimosso
+    `src/app/auth/callback`.
+  - **DB:** `supabase/schemas/01_billing.sql` rinominato; nuovo
+    `03_auth.sql` (DDL Better Auth verbatim da `@better-auth/cli generate` +
+    RLS zero-policy); migrazione `00004_better_auth_and_user_id.sql` (rename +
+    tabelle auth), validata applicando l'intera catena su un Postgres usa-e-getta.
+    Aggiunti anche i `grant … to service_role` espliciti su tutte e tre le
+    tabelle (`users_billing`/`tool_events`/`feedback`, migrazione 00005), così un
+    rebuild da migrazioni riproduce lo stato funzionante senza le default
+    privileges della piattaforma.
+    `db:types` da rigenerare col DB linkato.
+  - **Brain:** nuova [ADR 0012](content/decisions/0012-mcp-auth-better-auth-self-hosted.md)
+    (supersedes 0001, che ora punta a 0012); riscritti
+    [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md) e
+    [dev-setup-guide.md](content/knowledge/dev-setup-guide.md); aggiornato
+    [billing-setup.md](content/knowledge/billing-setup.md); aggiornata la
+    `CLAUDE.md` di compagnia (stack + billing); nuovo `.env.example`.
+- **Follow-ups:** task umani (sez. C del piano): generare i segreti, `DATABASE_URL`
+  session pooler, verificare il dominio Resend `dottcomm.dev`, `npm run db:push` +
+  `db:types`, env su Vercel (aggiungi Better Auth, rimuovi WorkOS), riconnettere
+  il connector Claude (DCR), poi **decommissionare WorkOS** (via i $100/mese). Il
+  branch `migrate-auth-to-better-auth` può essere cancellato (contenuto superato).
+  Aperti tecnici: enforcement degli scope in `withMcpAuth`; drift dello schema
+  Better Auth agli upgrade (ri-`generate` + diff su `03_auth.sql`).
+
 ## 2026-07-07 — Landing: riposizionamento «estensione di Claude» + copy allineata ai tool
 
 - **Did:** rilavorata la copy della landing partendo dai suggerimenti dell'utente,

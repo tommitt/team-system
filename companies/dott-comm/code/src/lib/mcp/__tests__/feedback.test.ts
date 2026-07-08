@@ -47,7 +47,7 @@ describe("invia_feedback", () => {
       AUTHED,
     );
     expect(insert).toHaveBeenCalledExactlyOnceWith("feedback", {
-      workos_user_id: "user_1",
+      user_id: "user_1",
       categoria: "capability_mancante",
       messaggio: "Vorrei generare direttamente il file F24",
       contesto: "dopo prospetto_acconti",

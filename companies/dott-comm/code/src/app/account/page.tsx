@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { withAuth } from "@workos-inc/authkit-nextjs";
+import { auth } from "@/lib/auth";
 import { BillingShell } from "@/components/BillingShell";
 import {
   getBillingRow,
@@ -20,11 +21,12 @@ const PLAN_LABELS: Record<Plan, string> = {
 };
 
 export default async function AccountPage() {
-  // The proxy's middlewareAuth redirects signed-out visitors to AuthKit before
-  // this renders; the redirect below is only a belt-and-braces fallback
-  // (ensureSignedIn would try to set a PKCE cookie, illegal during render).
-  const { user } = await withAuth();
-  if (!user) redirect("/upgrade");
+  // The proxy redirects signed-out visitors to /sign-in before this renders;
+  // the redirect below is a belt-and-braces fallback if the optimistic cookie
+  // check let a request through with no valid session.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in?returnTo=/account");
+  const user = session.user;
 
   const row = await getBillingRow(user.id);
   const plan: Plan = row?.plan ?? "trial";

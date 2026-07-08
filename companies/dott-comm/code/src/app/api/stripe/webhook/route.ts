@@ -31,12 +31,12 @@ function customerId(ref: string | Stripe.Customer | Stripe.DeletedCustomer | nul
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customer = customerId(session.customer);
-  let workosUserId = session.client_reference_id ?? null;
-  if (!workosUserId && customer) {
+  let userId = session.client_reference_id ?? null;
+  if (!userId && customer) {
     const c = await getStripe().customers.retrieve(customer);
-    if (!c.deleted) workosUserId = c.metadata.workos_user_id ?? null;
+    if (!c.deleted) userId = c.metadata.app_user_id ?? null;
   }
-  if (!workosUserId || !customer) {
+  if (!userId || !customer) {
     console.error("checkout.session.completed without a resolvable user:", session.id);
     return;
   }
@@ -44,7 +44,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     typeof session.subscription === "string"
       ? session.subscription
       : (session.subscription?.id ?? null);
-  await activateSubscription(workosUserId, customer, subscription);
+  await activateSubscription(userId, customer, subscription);
 }
 
 async function handleSubscriptionChange(
@@ -56,7 +56,7 @@ async function handleSubscriptionChange(
   const plan = deleted ? "canceled" : SUBSCRIPTION_STATUS_TO_PLAN[sub.status];
   if (!plan) return;
   const matched = await setPlanByStripeCustomer(customer, plan, {
-    workosUserIdFallback: sub.metadata?.workos_user_id,
+    userIdFallback: sub.metadata?.app_user_id,
     clearSubscriptionId: deleted,
   });
   if (!matched) {

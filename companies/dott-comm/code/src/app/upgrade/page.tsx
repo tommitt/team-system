@@ -1,4 +1,5 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { BillingShell } from "@/components/BillingShell";
 import {
   getBillingRow,
@@ -24,7 +25,8 @@ export default async function UpgradePage({
   searchParams: Promise<{ t?: string }>;
 }) {
   const { t } = await searchParams;
-  const { user } = await withAuth();
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user ?? null;
 
   // A signed session always wins; the token only matters when signed out. The
   // token lets a paywalled MCP user reach checkout without re-authenticating.

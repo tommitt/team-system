@@ -8,7 +8,7 @@
 
 create table public.tool_events (
   id              bigint generated always as identity primary key,
-  workos_user_id  text not null,
+  user_id         text not null,
   tool            text not null,
   session_id      text,
   outcome         text not null check (outcome in ('ok', 'error', 'blocked')),
@@ -26,7 +26,7 @@ alter table public.tool_events enable row level security;
 
 create table public.feedback (
   id              bigint generated always as identity primary key,
-  workos_user_id  text not null,
+  user_id         text not null,
   categoria       text not null check (categoria in
                     ('capability_mancante', 'comportamento_diverso', 'frizione', 'altro')),
   messaggio       text not null,
@@ -36,3 +36,11 @@ create table public.feedback (
 
 alter table public.feedback enable row level security;
 -- No policies: service-role only.
+
+-- Both tables are written via PostgREST as `service_role` (telemetry + feedback
+-- inserts). Grant DML explicitly so a from-migrations rebuild reproduces the
+-- working state — same rationale as users_billing in 01_billing.sql: a bare
+-- `supabase start` doesn't apply Supabase's platform default privileges to
+-- CLI-migrated tables (service_role bypasses RLS but still needs the grant).
+grant select, insert, update, delete on table public.tool_events to service_role;
+grant select, insert, update, delete on table public.feedback to service_role;

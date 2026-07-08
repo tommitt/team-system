@@ -3,7 +3,7 @@ title: MCP billing — Supabase free-trial gate + Stripe (for developers)
 status: active
 owner: ttassi
 updated: 2026-07-07
-tags: [mcp, billing, stripe, supabase, workos, paywall, engineering, runbook]
+tags: [mcp, billing, stripe, supabase, better-auth, paywall, engineering, runbook]
 ---
 
 # MCP billing — free-trial gate + Stripe (for developers)
@@ -16,8 +16,10 @@ Setting up from scratch? Follow the ordered checklist in
 
 ## How it works
 
-Identity lives in **WorkOS** (JWT `sub`), money in **Stripe**, request-time
-entitlement (plan + usage counter) in **Supabase Postgres**.
+Identity lives in **Better Auth** (the `user_id` — self-hosted in our own
+Postgres, see [ADR 0012](../decisions/0012-mcp-auth-better-auth-self-hosted.md)),
+money in **Stripe**, request-time entitlement (plan + usage counter) in
+**Supabase Postgres**.
 
 ```
 tool call ──▶ registerGatedTool (lib/mcp/tools.ts)
@@ -27,7 +29,7 @@ tool call ──▶ registerGatedTool (lib/mcp/tools.ts)
               allowed → run tool (± trial warning appended)
               blocked → normal tool result with upgrade message (never 401/403)
 
-pay ──▶ site /upgrade (AuthKit session, same WorkOS env) ──▶ Stripe Checkout
+pay ──▶ site /upgrade (Better Auth session) ──▶ Stripe Checkout
 Stripe webhook ──▶ /api/stripe/webhook ──▶ flips plan in Supabase
               → the user's NEXT tool call is unblocked (no token refresh)
 ```
@@ -47,8 +49,10 @@ blocked with a friendly Italian message, never served unmetered.
   `users_billing` table (RLS on, zero policies → service-role only) + the current
   `increment_usage()` RPC. Migrations are derived from it via `npm run db:diff`;
   see [db-schema-migrations.md](./db-schema-migrations.md).
-- `supabase/migrations/0000{1,2}_*.sql` — derived history (`users_billing` +
-  `increment_usage`, then the daily-usage rework). Applied, not hand-edited.
+- `supabase/migrations/*.sql` — derived history: `users_billing` +
+  `increment_usage` (00001), the daily-usage rework (00002), then the
+  `workos_user_id` → `user_id` rename in 00004 (Better Auth cutover, ADR 0012).
+  Applied, not hand-edited.
 - `src/lib/billing/database.types.ts` — generated schema types (`npm run db:types`).
 - `src/lib/billing/supabase.ts` — typed service-role client singleton (`server-only`).
 - `src/lib/billing/gate.ts` — `checkAndRecordUsage`, pure `decide()` behavior
@@ -57,9 +61,10 @@ blocked with a friendly Italian message, never served unmetered.
   (idempotent, safe under Stripe retries).
 - `src/lib/mcp/tools.ts` — `registerGatedTool` wrapper; register every tool
   through it.
-- `src/proxy.ts` — AuthKit sessions for `/upgrade` + `/account` (Next 16 renamed
-  middleware → proxy). `middlewareAuth` enabled; `/upgrade` is public.
-- `src/app/auth/callback/route.ts`, `src/app/upgrade/{page.tsx,actions.ts}`,
+- `src/proxy.ts` — optimistic Better Auth session-cookie guard for `/account`
+  (Next 16 renamed middleware → proxy). `/upgrade` is public (renders its own
+  sign-in CTA); server components re-validate with `auth.api.getSession`.
+- `src/app/sign-in/page.tsx`, `src/app/upgrade/{page.tsx,actions.ts}`,
   `src/app/upgrade/success/page.tsx`, `src/app/account/page.tsx` — the payment leg.
 - `src/app/api/stripe/webhook/route.ts` — signature-verified event → plan
   transitions.
@@ -98,7 +103,7 @@ real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
 | `DAILY_TOOL_CALL_LIMIT` | recurring daily allowance after the pool (default 20) |
 | `NEXT_PUBLIC_SITE_URL` | builds the `/upgrade` link inside tool responses |
 | `MCP_DEV_USER_ID` | dev only: exercise the gate with auth off |
-| `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | website AuthKit sessions (same WorkOS env as the MCP AS) |
+| `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `DATABASE_URL`, `RESEND_API_KEY`, `MAGIC_LINK_FROM` | website Better Auth sessions (same instance as the MCP AS) — see [mcp-auth-setup.md](./mcp-auth-setup.md) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` | payments |
 
 ## Setup steps
@@ -112,10 +117,12 @@ real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
    `checkout.session.completed`, `customer.subscription.updated`,
    `customer.subscription.deleted` → `STRIPE_WEBHOOK_SECRET`; enable the
    Customer Portal (with cancel).
-3. **WorkOS**: in the same environment as the MCP AS, register redirect URIs
-   `http://localhost:3000/auth/callback` and the prod equivalent; copy
-   `WORKOS_CLIENT_ID` + `WORKOS_API_KEY`; generate `WORKOS_COOKIE_PASSWORD`
-   (`openssl rand -base64 24`).
+3. **Better Auth + Resend** (the website session layer — full steps in
+   [mcp-auth-setup.md](./mcp-auth-setup.md)): set `BETTER_AUTH_URL`, generate
+   `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), point `DATABASE_URL` at the
+   Supabase session pooler, and add `RESEND_API_KEY` + `MAGIC_LINK_FROM` for
+   magic-link email. Same Better Auth instance as the MCP AS, so the `user_id`
+   matches across the site and the MCP.
 4. **Vercel**: set every var above (Preview + Production), redeploy.
 
 ## Verify
@@ -135,13 +142,14 @@ real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
 ## Gotchas (learned building this)
 
 - **`src/proxy.ts` matcher must never cover `/api/*` or `/.well-known/*`** — the
-  MCP endpoint does bearer auth; AuthKit session logic would break it. The
-  matcher is an explicit allowlist (`/upgrade`, `/account`).
-- **`getSignInUrl()` / `withAuth({ ensureSignedIn })` set a PKCE cookie** in
-  authkit-nextjs 4.x — illegal during server-component render in Next 16.
-  Sign-in must go through a server action (`signIn()` in
-  `src/app/upgrade/actions.ts`) and signed-out protection through the proxy's
-  `middlewareAuth`, not `ensureSignedIn` in pages.
+  MCP endpoint, its discovery metadata, and the Better Auth catch-all at
+  `/api/auth/*` all do their own auth; a session guard would break them. The
+  matcher is an explicit allowlist — only `/account` (`/upgrade` is public and
+  renders its own sign-in CTA).
+- **The proxy check is optimistic** — `getSessionCookie` only confirms a cookie
+  is present, not valid (no DB round trip). Server components behind it
+  re-validate with `auth.api.getSession`, so `/account` keeps a belt-and-braces
+  redirect for the case the optimistic check lets a stale cookie through.
 - **Blocked tool calls are normal results** (no `isError`, no 4xx): MCP
   clients treat auth-shaped errors as broken connections and may loop into
   re-login. The upgrade message rides in-band and the LLM relays it.
