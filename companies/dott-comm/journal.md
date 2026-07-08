@@ -14,6 +14,34 @@ Format:
 
 ---
 
+## 2026-07-07 — Estrazione scontrini → detrazione spese sanitarie (S13, via MCP)
+
+- **Did:** costruita la capability per estrarre i dati da scontrini e fatture
+  mediche di un contribuente e compilare il foglio della detrazione IRPEF delle
+  spese sanitarie (730/Redditi PF). Ricerca su fonti ufficiali per diventare
+  esperti del flusso reale e delle regole; verifica del calcolo e dello schema di
+  estrazione sulle **istruzioni 730/2026** (periodo 2025). Corretta a metà strada
+  la consegna: **servita via MCP** (tool gated + prompt-skill), non come
+  `.claude/skills` di repo (un primo `estrai-scontrini` skill è stato rimosso).
+  Fix di correttezza fiscale dopo verifica: franchigia **unica** sul pool E1+E2
+  (non separata), **E25** trattato come deduzione (non 19%), rimborsi scorporati.
+  Schema del foglio **configurabile** (param `colonne`, ricordato in `config.md`).
+  116 test verdi, `src` typecheck pulito.
+- **Changed:** [ADR 0012](content/decisions/0012-estrazione-scontrini-detrazione-sanitaria.md)
+  (capability MCP S13, regole verificate, schema configurabile); nuovo doc
+  [spese-sanitarie-detrazione](content/knowledge/spese-sanitarie-detrazione.md);
+  codice: nuovo `code/src/lib/fiscal/detrazioni-sanitarie.ts` (+test), 6 costanti
+  registrate in `constants.ts`, nuovo tool `code/src/lib/mcp/skills/detrazione-sanitaria.ts`
+  registrato in `tools.ts`, nuovo prompt + estensione `convenzione_studio_db` in
+  `prompts.ts`, casi e2e in `tools-e2e.test.ts`; aggiornato il
+  [catalogo](content/brainstorms/catalogo-skills-tools.md) (stato build S13).
+- **Follow-ups:** validazione col pilota (G-pilota); stima E2 = massimo teorico
+  (manca l'incapienza del familiare); stato pluriennale rate E4/E5 e riporto E6
+  non modellati; E25 solo segnalato, non calcolato nel reddito; scrittura diretta
+  su Google Sheet via connettore.
+
+---
+
 ## 2026-07-07 — Registro costanti fiscali: provenienza, vigenze, `/verifica-costanti`
 
 - **Did:** deciso e implementato come mantenere le costanti a peso legale

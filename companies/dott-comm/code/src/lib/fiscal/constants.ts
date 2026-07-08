@@ -441,6 +441,70 @@ export const RIDUZIONE_SANZIONE_ACQUIESCENZA = costante(
   "2026-07-07",
 );
 
+// --- Detrazione spese sanitarie (art. 15 c.1 lett. c TUIR) ----------------
+
+/**
+ * Aliquota della detrazione IRPEF per le spese sanitarie: 19% sull'eccedenza
+ * della franchigia. NB: le spese sanitarie sono ESCLUSE sia dalla riduzione per
+ * reddito dell'art. 15 c.3-bis TUIR (120k/240k), sia dal nuovo tetto agli oneri
+ * dell'art. 16-ter TUIR (L. 207/2024, redditi > 75k): restano detraibili al 19%
+ * a qualunque livello di reddito.
+ */
+export const DETRAZIONE_SANITARIE_ALIQUOTA = costante(
+  0.19, // 19%
+  "art. 15 c.1 TUIR; agenziaentrate.gov.it — spese sanitarie detraibili (esclusione dai tetti reddito: art. 15 c.3-bis e art. 16-ter TUIR, Circ. AdE 6/E del 29/5/2025)",
+  "2026-07-07",
+);
+
+/**
+ * Franchigia sulle spese sanitarie: la detrazione spetta sulla parte che eccede
+ * €129,11. Unica e cumulativa per contribuente + familiari a carico (righi E1
+ * col. 1 e col. 2). Non si applica ai righi E3/E4/E5 (disabili).
+ */
+export const FRANCHIGIA_SANITARIE = costante(
+  129.11,
+  "art. 15 c.1 lett. c TUIR; istruzioni Modello 730 — rigo E1",
+  "2026-07-07",
+);
+
+/**
+ * Soglia oltre la quale la detrazione delle spese dei righi E1+E2+E3 può essere
+ * ripartita in 4 quote annuali di pari importo (opzione in dichiarazione; le
+ * quote residue vanno nel rigo E6 negli anni successivi).
+ */
+export const SOGLIA_RATEIZZAZIONE_SANITARIE = costante(
+  15_493.71,
+  "art. 15 c.1 TUIR; istruzioni Modello 730 — rateizzazione righi E1/E2/E3",
+  "2026-07-07",
+);
+/** Numero di quote annuali della rateizzazione della detrazione sanitaria. */
+export const N_RATE_DETRAZIONE_SANITARIE = costante(
+  4,
+  "art. 15 c.1 TUIR; istruzioni Modello 730 — rigo E6",
+  "2026-07-07",
+);
+
+/**
+ * Tetto di spesa per il rigo E2 (spese per familiari NON a carico affetti da
+ * patologie esenti): massimo €6.197,48 annui, e solo per la quota che non ha
+ * trovato capienza nell'IRPEF del familiare malato (dato esterno da acquisire).
+ */
+export const CAP_E2_PATOLOGIE_ESENTI = costante(
+  6_197.48,
+  "istruzioni Modello 730 — rigo E2 (familiari non a carico, patologie esenti)",
+  "2026-07-07",
+);
+
+/**
+ * Tetto di spesa per il rigo E4 (acquisto veicoli per persone con disabilità):
+ * detrazione 19% su un massimo di €18.075,99, una sola volta in 4 anni.
+ */
+export const CAP_E4_VEICOLI_DISABILI = costante(
+  18_075.99,
+  "istruzioni Modello 730 — rigo E4 (veicoli per persone con disabilità)",
+  "2026-07-07",
+);
+
 // --- Disclaimer condiviso, in coda a ogni output di calcolo ---------------
 
 export const DISCLAIMER_BOZZA =
