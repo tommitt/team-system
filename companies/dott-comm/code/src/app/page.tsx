@@ -11,8 +11,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 const USE_CASES = [
   {
     n: "01",
-    title: "F24 e deleghe",
-    body: "Compilate, quadrate e con i codici tributo verificati. A te resta solo firmare.",
+    title: "F24 e acconti",
+    body: "Saldo, acconti e piano di rate calcolati, con i codici tributo giusti. A te resta firmare.",
   },
   {
     n: "02",
@@ -21,23 +21,23 @@ const USE_CASES = [
   },
   {
     n: "03",
-    title: "Quadrature e riconciliazioni",
-    body: "I numeri tornano senza aprire dieci fogli Excel. Le differenze te le segnala lui.",
+    title: "Scadenzario cliente",
+    body: "Chi deve pagare cosa, e quando. Derivato dai dati del cliente, con i festivi già gestiti.",
   },
   {
     n: "04",
-    title: "Scadenzario",
-    body: "Chi deve pagare cosa, e quando. Sempre aggiornato, senza il promemoria appiccicato al monitor.",
+    title: "Atti e cartelle",
+    body: "Termini perentori, sospensione feriale e opzioni di difesa, calcolati dalla data di notifica.",
   },
   {
     n: "05",
-    title: "LIPE ed esterometro",
-    body: "Comunicazioni periodiche preparate e pronte per l’invio. Le rivedi e confermi.",
+    title: "Ravvedimento operoso",
+    body: "Sanzione ridotta e interessi al giorno per i versamenti tardivi. Il conto esatto in un attimo.",
   },
   {
     n: "06",
     title: "Lettura documenti",
-    body: "Fatture, visure e cartelle lette e ordinate in automatico. I dati finiscono dove servono.",
+    body: "Fatture, visure e cartelle: dati letti, normalizzati e controllati. Le righe dubbie te le segnala.",
   },
 ];
 
@@ -68,8 +68,15 @@ const TESTIMONIALS = [
   },
 ];
 
-const ArrowDown = () => (
-  <svg viewBox="0 0 16 16" fill="none" width="18" height="18" aria-hidden="true">
+const Arrow = ({ up = false }: { up?: boolean }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    width="18"
+    height="18"
+    aria-hidden="true"
+    style={up ? { transform: "rotate(180deg)" } : undefined}
+  >
     <path
       d="M8 3v9m0 0 3.5-3.6M8 12 4.5 8.4"
       stroke="currentColor"
@@ -92,18 +99,14 @@ export default function Home() {
         <div className="deco deco--hero" aria-hidden="true" />
         <div className="hero-grid">
           <div>
-            <span className="hero-badge">
-              <span className="hero-badge-dot" />
-              commercialista × claude
-            </span>
             <h1 className="hero-title">
-              Un agente AI che lavora <span className="accent">davvero</span> per
-              il tuo studio.
+              L’estensione di <span className="accent">Claude</span> per i{" "}
+              Commercialisti.
             </h1>
             <p className="hero-sub">
-              F24, solleciti, quadrature, comunicazioni: DottComm prepara il
-              lavoro ripetitivo al posto tuo. Tu controlli, correggi e approvi —
-              sempre al comando.
+              Aggiunge a Claude gli strumenti dello studio (F24, solleciti,
+              scadenze, ravvedimenti) e prepara il lavoro ripetitivo pronto da
+              rivedere. Tu controlli, correggi e approvi.
             </p>
             <div className="hero-actions">
               <ScrollLink
@@ -112,18 +115,15 @@ export default function Home() {
                 className="cta-btn cta-btn--big"
               >
                 <span>Inizia ora</span>
-                <ArrowDown />
+                <Arrow />
               </ScrollLink>
-              <ScrollLink
-                targetId="usi"
-                href="#usi"
-                className="btn-ghost-dark"
-              >
+              <ScrollLink targetId="usi" href="#usi" className="btn-ghost-dark">
                 Come funziona
               </ScrollLink>
             </div>
             <p className="hero-fine">
-              Nessuna competenza tecnica · Ogni output è una bozza che approvi tu
+              Nessuna competenza tecnica · Ogni output è una bozza che approvi
+              tu
             </p>
           </div>
 
@@ -166,7 +166,9 @@ export default function Home() {
         <div className="section-inner">
           <div className="usi-head" data-reveal>
             <span className="kicker">il lavoro che ti ruba le giornate</span>
-            <h2>Le attività che ti rubavano ore, fatte meglio in pochi minuti.</h2>
+            <h2>
+              Le attività che ti rubavano ore, fatte meglio in pochi minuti.
+            </h2>
           </div>
           <div className="grid-3" data-reveal>
             {USE_CASES.map((u) => (
@@ -223,7 +225,12 @@ export default function Home() {
                 </div>
                 <div className="mock-download-body">
                   <div className="mock-app-icon">
-                    <Image src="/claude-logo.svg" alt="Claude" width={30} height={30} />
+                    <Image
+                      src="/claude-logo.svg"
+                      alt="Claude"
+                      width={30}
+                      height={30}
+                    />
                   </div>
                   <div className="mock-progress">
                     <div className="mock-progress-bar" />
@@ -255,7 +262,12 @@ export default function Home() {
                 </div>
                 <div className="mock-connector-body">
                   <div className="mock-app-icon">
-                    <Image src="/logo.svg" alt="DottComm" width={34} height={34} />
+                    <Image
+                      src="/logo.svg"
+                      alt="DottComm"
+                      width={34}
+                      height={34}
+                    />
                   </div>
                   <span className="mock-connector-name">DottComm</span>
                   <span className="mock-connector-url">{CONNECTOR_URL}</span>
@@ -272,7 +284,7 @@ export default function Home() {
               <p>
                 Copia il prompt, apri una nuova chat e incollalo: Claude capisce
                 subito come lavorare per il tuo studio. Da lì in poi lavori
-                parlando — chiedi, correggi, approvi.
+                parlando: chiedi, correggi, approvi.
               </p>
               <div className="step-cta">
                 <CopyPromptButton variant="nav" />
@@ -286,7 +298,9 @@ export default function Home() {
                   <span className="mock-dot" />
                 </div>
                 <div className="mock-convo">
-                  <p className="mock-msg mock-msg--user">Manda la F24 di luglio</p>
+                  <p className="mock-msg mock-msg--user">
+                    Manda la F24 di luglio
+                  </p>
                   <p className="mock-msg mock-msg--agent">
                     Fatto, controllata e pronta per l’invio.
                   </p>
@@ -330,7 +344,9 @@ export default function Home() {
         <div className="section-inner">
           <div className="section-head--center" data-reveal>
             <span className="kicker kicker--mint">prezzi</span>
-            <h2 className="on-dark">Un prezzo che rientra alla prima pratica.</h2>
+            <h2 className="on-dark">
+              Un prezzo che rientra alla prima pratica.
+            </h2>
           </div>
           <div className="price-grid" data-reveal>
             <div className="price-card price-card--dark">
@@ -342,14 +358,28 @@ export default function Home() {
                 </div>
                 <div className="price-meta">senza carta di credito</div>
               </div>
-              <p className="price-desc">Tutte le funzioni, con un utilizzo limitato.</p>
+              <p className="price-desc">
+                Tutte le funzioni, con un utilizzo limitato.
+              </p>
               <div className="price-features">
-                <span><span className="tick">✓</span> Tutti gli strumenti DottComm</span>
-                <span><span className="tick">✓</span> 1 utente</span>
-                <span><span className="tick">✓</span> Utilizzo mensile limitato</span>
-                <span><span className="tick">✓</span> Supporto via email</span>
+                <span>
+                  <span className="tick">✓</span> Tutti gli strumenti DottComm
+                </span>
+                <span>
+                  <span className="tick">✓</span> 1 utente
+                </span>
+                <span>
+                  <span className="tick">✓</span> Utilizzo giornaliero limitato
+                </span>
+                <span>
+                  <span className="tick">✓</span> Supporto via email
+                </span>
               </div>
-              <ScrollLink targetId="installazione" href="#installazione" className="price-cta">
+              <ScrollLink
+                targetId="installazione"
+                href="#installazione"
+                className="price-cta"
+              >
                 Inizia gratis
               </ScrollLink>
             </div>
@@ -362,16 +392,30 @@ export default function Home() {
                   <span className="num">€98</span>
                   <span className="per">/mese</span>
                 </div>
-                <div className="price-meta">un utente · utilizzo illimitato</div>
+                <div className="price-meta">
+                  un utente · utilizzo illimitato
+                </div>
               </div>
               <p className="price-desc">Per il professionista, senza limiti.</p>
               <div className="price-features">
-                <span><span className="tick">✓</span> Utilizzo illimitato</span>
-                <span><span className="tick">✓</span> 1 utente</span>
-                <span><span className="tick">✓</span> Tutti gli strumenti DottComm</span>
-                <span><span className="tick">✓</span> Scadenzario sempre aggiornato e supporto prioritario</span>
+                <span>
+                  <span className="tick">✓</span> Utilizzo illimitato
+                </span>
+                <span>
+                  <span className="tick">✓</span> 1 utente
+                </span>
+                <span>
+                  <span className="tick">✓</span> Tutti gli strumenti DottComm
+                </span>
+                <span>
+                  <span className="tick">✓</span> Supporto prioritario
+                </span>
               </div>
-              <ScrollLink targetId="installazione" href="#installazione" className="price-cta">
+              <ScrollLink
+                targetId="installazione"
+                href="#installazione"
+                className="price-cta"
+              >
                 Inizia ora
               </ScrollLink>
             </div>
@@ -388,10 +432,19 @@ export default function Home() {
                 Per studi con più postazioni e uso centralizzato.
               </p>
               <div className="price-features">
-                <span><span className="tick">✓</span> Più postazioni</span>
-                <span><span className="tick">✓</span> Uso centralizzato dello studio</span>
-                <span><span className="tick">✓</span> SSO e sicurezza avanzata</span>
-                <span><span className="tick">✓</span> Referente dedicato e formazione team</span>
+                <span>
+                  <span className="tick">✓</span> Più postazioni
+                </span>
+                <span>
+                  <span className="tick">✓</span> Uso centralizzato dello studio
+                </span>
+                <span>
+                  <span className="tick">✓</span> SSO e sicurezza avanzata
+                </span>
+                <span>
+                  <span className="tick">✓</span> Referente dedicato e
+                  formazione team
+                </span>
               </div>
               <a href="mailto:info@dottcomm.dev" className="price-cta">
                 Parla con noi
@@ -434,7 +487,7 @@ export default function Home() {
             className="cta-btn cta-btn--big"
           >
             <span>Inizia ora</span>
-            <ArrowDown />
+            <Arrow up />
           </ScrollLink>
         </div>
       </section>

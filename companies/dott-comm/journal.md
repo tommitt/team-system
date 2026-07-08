@@ -14,6 +14,35 @@ Format:
 
 ---
 
+## 2026-07-07 — Landing: riposizionamento «estensione di Claude» + copy allineata ai tool
+
+- **Did:** rilavorata la copy della landing partendo dai suggerimenti dell'utente,
+  valutando ogni modifica a schermo (screenshot headless Chrome).
+- **Changed:**
+  - **Posizionamento hero:** rimossa la pill «commercialista × claude»; nuovo
+    titolo **«L'estensione di Claude per i Commercialisti»** (accent terracotta su
+    «Claude»); hero-sub e fine-print resi espliciti sul modello «aggiunge a Claude
+    gli strumenti dello studio».
+  - **Correzione feature (bug):** la sezione usi e una FAQ elencavano funzionalità
+    inesistenti (*quadrature e riconciliazioni*, *LIPE ed esterometro*).
+    Sostituite con capacità reali mappate su `tools.ts` (F24/acconti, solleciti,
+    scadenzario, atti e cartelle, ravvedimento, lettura documenti).
+  - **FAQ:** aggiunta «Cos'è DottComm?» (aperta di default) col posizionamento;
+    precisato che lo stesso connettore funziona anche in **Claude Code** e
+    **Claude Cowork**.
+  - **Tipografia/UX:** rimossi i trattini lunghi `—` dalla copy IT (→ parentesi);
+    più spazio tra «Prezzi» e il bottone in nav; freccia del closing-CTA girata in
+    su (scrolla verso l'alto). Componente `Arrow` con prop `up`.
+  - Nuovo doc vivo:
+    [landing-posizionamento-copy.md](content/knowledge/landing-posizionamento-copy.md)
+    (posizionamento + regola «la copy riflette gli strumenti reali» + convenzioni IT).
+  - File: `code/src/app/page.tsx`, `code/src/components/FaqAccordion.tsx`,
+    `code/src/app/globals.css`.
+- **Follow-ups:** trattini `—` restano negli output dei tool MCP e nei `<title>`
+  delle pagine legali (fuori scope «copy landing»); sweeppare se si vuole coerenza
+  totale. Il mock chat dell'hero dice ancora «14 deleghe compilate e quadrate»
+  (illustrativo, non un claim).
+
 ## 2026-07-07 — Registro costanti fiscali: provenienza, vigenze, `/verifica-costanti`
 
 - **Did:** deciso e implementato come mantenere le costanti a peso legale

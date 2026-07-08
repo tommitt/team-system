@@ -5,6 +5,10 @@ import { useState } from "react";
 /** Domande frequenti dei commercialisti. Un solo pannello aperto alla volta. */
 const FAQ = [
   {
+    q: "Cos’è DottComm?",
+    a: "Un’estensione per Claude, l’assistente AI di Anthropic, pensata per lo studio del commercialista. Aggiunge a Claude gli strumenti del mestiere (F24 e acconti, scadenze, ravvedimento, atti e cartelle, lettura documenti), così lo usi per il lavoro di tutti i giorni parlando in italiano. Lo stesso connettore funziona allo stesso modo anche in Claude Code e Claude Cowork.",
+  },
+  {
     q: "Serve competenza tecnica?",
     a: "No. Installi l’app Claude, colleghi DottComm una volta sola dal menu Connettori e incolli un prompt. Da lì lavori parlando in italiano, come scriveresti a un collaboratore.",
   },
@@ -22,7 +26,7 @@ const FAQ = [
   },
   {
     q: "Che tipo di attività copre?",
-    a: "Il lavoro ricorrente dello studio: F24 e deleghe, quadrature e riconciliazioni, solleciti ai clienti, scadenzario, comunicazioni periodiche come LIPE ed esterometro, lettura e ordinamento di documenti.",
+    a: "Il lavoro ricorrente dello studio: F24 e acconti, solleciti ai clienti, scadenzario del cliente, termini di atti e cartelle, ravvedimento operoso, lettura e controllo dei documenti.",
   },
   {
     q: "Posso provarlo prima di decidere?",
