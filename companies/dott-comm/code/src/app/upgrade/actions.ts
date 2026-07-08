@@ -75,6 +75,15 @@ export async function startCheckout(formData?: FormData): Promise<never> {
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) throw new Error("STRIPE_PRICE_ID is not set.");
 
+  // Cancel must NOT land on a page that auto-forwards back into checkout
+  // (redirect loop): ?canceled=1 disables the auto-forward. Keep the token so
+  // a paywall visitor still sees their plan instead of the sign-in prompt.
+  const cancelUrl = new URL(`${siteUrl()}/upgrade`);
+  cancelUrl.searchParams.set("canceled", "1");
+  if (tokenUserId && typeof token === "string") {
+    cancelUrl.searchParams.set("t", token);
+  }
+
   const customer = await getOrCreateStripeCustomer(userId, email);
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
@@ -83,7 +92,7 @@ export async function startCheckout(formData?: FormData): Promise<never> {
     client_reference_id: userId,
     subscription_data: { metadata: { app_user_id: userId } },
     success_url: `${siteUrl()}/upgrade/success`,
-    cancel_url: `${siteUrl()}/upgrade`,
+    cancel_url: cancelUrl.toString(),
   });
   redirect(session.url!);
 }

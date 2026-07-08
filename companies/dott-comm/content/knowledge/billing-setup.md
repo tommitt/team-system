@@ -2,7 +2,7 @@
 title: MCP billing — Supabase free-trial gate + Stripe (for developers)
 status: active
 owner: ttassi
-updated: 2026-07-07
+updated: 2026-07-08
 tags: [mcp, billing, stripe, supabase, better-auth, paywall, engineering, runbook]
 ---
 
@@ -29,10 +29,22 @@ tool call ──▶ registerGatedTool (lib/mcp/tools.ts)
               allowed → run tool (± trial warning appended)
               blocked → normal tool result with upgrade message (never 401/403)
 
-pay ──▶ site /upgrade (Better Auth session) ──▶ Stripe Checkout
+pay ──▶ /upgrade?t=… (paywall link) ──▶ AUTO-forwards to Stripe Checkout
+        /account (nav "Accedi" → signed-in home) ──▶ checkout / portal directly
 Stripe webhook ──▶ /api/stripe/webhook ──▶ flips plan in Supabase
               → the user's NEXT tool call is unblocked (no token refresh)
 ```
+
+Web-surface roles (see [ADR 0013](../decisions/0013-billing-web-ux-account-standalone-upgrade-dispatcher.md)):
+**`/account`** is the standalone signed-in home (plan, phase-aware usage bar,
+direct `startCheckout` or portal, "Disconnetti" sign-out; reachable from the nav
+"Accedi" button — a static link, the proxy handles the signed-out bounce).
+**`/upgrade`** is the paywall dispatcher: with a resolvable identity and a
+payable plan it auto-submits the checkout form on mount (client-side
+`AutoSubmit`, so link-preview bots that don't run JS can never create Stripe
+sessions on GET); `?canceled=1` (the `cancel_url`) disables the forward to avoid
+a redirect loop. `past_due` is routed to the **portal**, never to a new checkout
+(double-subscription risk).
 
 Free trial = **50 upfront calls, then 20/day** — the first `TRIAL_TOOL_CALL_LIMIT`
 (default 50) tool calls are a lifetime pool usable at any pace; once spent, the
@@ -65,7 +77,9 @@ blocked with a friendly Italian message, never served unmetered.
   (Next 16 renamed middleware → proxy). `/upgrade` is public (renders its own
   sign-in CTA); server components re-validate with `auth.api.getSession`.
 - `src/app/sign-in/page.tsx`, `src/app/upgrade/{page.tsx,actions.ts}`,
-  `src/app/upgrade/success/page.tsx`, `src/app/account/page.tsx` — the payment leg.
+  `src/app/upgrade/success/page.tsx`, `src/app/account/{page.tsx,actions.ts}` —
+  the payment leg (`account/actions.ts` holds the sign-out server action);
+  `src/components/AutoSubmit.tsx` — the prefetch-safe checkout auto-forward.
 - `src/app/api/stripe/webhook/route.ts` — signature-verified event → plan
   transitions.
 
@@ -75,7 +89,7 @@ blocked with a friendly Italian message, never served unmetered.
 |---|---|---|
 | `trial` (default) | 50 upfront calls, then 20/day (Rome midnight reset), then daily block | lazy provisioning on first gated call |
 | `active` | unlimited | `checkout.session.completed`, subscription `active`/`trialing` |
-| `past_due` | allowed + fix-payment warning (Stripe is dunning) | subscription `past_due` |
+| `past_due` | allowed + fix-payment warning (Stripe is dunning); web surfaces route to the **portal**, not checkout | subscription `past_due` |
 | `canceled` | blocked with reactivate message | subscription deleted / `canceled`/`unpaid`/`incomplete_expired` |
 
 ## Public pricing (packaging)
@@ -155,3 +169,11 @@ real *daily* cap (`DAILY_TOOL_CALL_LIMIT`).
   re-login. The upgrade message rides in-band and the LLM relays it.
 - Webhook handler returns **500 on DB failure** so Stripe retries; all store
   writes are idempotent, so retries are safe.
+- **GETs of `/upgrade?t=…` must stay side-effect-free.** Paywall URLs get
+  unfurled by link-preview bots (Slack, chat clients, mail scanners); if a GET
+  created a Checkout session it would also lazily create a Stripe *customer*
+  per unfurl. Hence the auto-forward is a client-side form submit
+  (`AutoSubmit`), never a server redirect.
+- **`cancel_url` must not point at an auto-forwarding page** — a user backing
+  out of Stripe would be bounced straight back into checkout. `?canceled=1`
+  breaks the loop (and carries the token so the plan view survives).

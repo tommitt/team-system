@@ -114,6 +114,27 @@ should show the protected-resource + AS metadata and a tokenless `401` with
 opaque token → tool call. The user id is now the real Better Auth user id, and
 the gate lazy-provisions a `users_billing` row for it.
 
+### Testing the paywall token flow (`/upgrade?t=…`)
+
+To exercise the upgrade-token path (auto-forward to checkout without a session,
+[ADR 0013](../decisions/0013-billing-web-ux-account-standalone-upgrade-dispatcher.md)),
+mint a token by hand — mind the precedence: the app signs with
+**`UPGRADE_TOKEN_SECRET` first**, falling back to `BETTER_AUTH_SECRET`; a token
+signed with the wrong one verifies as null and the page silently shows the
+signed-out prompt.
+
+```bash
+SECRET=<UPGRADE_TOKEN_SECRET or, if unset, BETTER_AUTH_SECRET from .env.local>
+SECRET="$SECRET" node -e '
+const {createHmac} = require("node:crypto");
+const body = Buffer.from(JSON.stringify({sub: "<user_id>", exp: Math.floor(Date.now()/1000)+900})).toString("base64url");
+console.log(body + "." + createHmac("sha256", process.env.SECRET).update(body).digest("base64url"));'
+```
+
+Open `http://localhost:3000/upgrade?t=<token>` in a browser: with Stripe test
+keys set it auto-forwards to Checkout (`?canceled=1` must NOT); with a `curl`
+GET (≈ a link-preview bot) no Stripe session must be created.
+
 ## Billing / payments locally (optional)
 
 The seeded `dev_active` / `dev_canceled` rows cover the gate without Stripe. To

@@ -14,6 +14,36 @@ Format:
 
 ---
 
+## 2026-07-08 — UX billing web: «Accedi» in nav, /account autonomo, /upgrade auto-inoltra a Stripe
+
+- **Did:** dato un ingresso e un ruolo chiaro alle superfici billing del sito.
+  Nav: bottone outline **«Accedi»** (link statico a `/account`; il proxy gestisce
+  il rimbalzo a `/sign-in`, la landing resta statica). `/account` ora è la home
+  autonoma dell'utente: barra di utilizzo phase-aware (helper condiviso
+  `trialUsageView()` in `gate.ts`, unit-testato), checkout/portale Stripe
+  diretti (niente più deviazione su `/upgrade`), sign-out **«Disconnetti»**
+  (prima non esisteva alcun logout). `/upgrade` è diventato il dispatcher del
+  paywall: con identità risolvibile e piano pagabile **auto-inoltra a Stripe
+  Checkout** al mount (componente client `AutoSubmit` — i bot di link-preview
+  non eseguono JS, quindi un GET non crea mai sessioni/customer Stripe);
+  `cancel_url` = `/upgrade?canceled=1` (+ token) per evitare il redirect-loop;
+  **`past_due` → portale**, mai un nuovo checkout (rischio doppio abbonamento).
+  Documentato `DAILY_TOOL_CALL_LIMIT` in `.env.example` (il codice lo leggeva
+  già). Tutto verificato end-to-end sullo stack locale (magic link da console,
+  righe seedate via psql, Stripe test mode, Chrome headless per l'auto-forward
+  reale: `/upgrade?t=…` → checkout.stripe.com in ~1s senza click).
+- **Changed:**
+  [ADR 0013](content/decisions/0013-billing-web-ux-account-standalone-upgrade-dispatcher.md)
+  (nuova); [billing-setup.md](content/knowledge/billing-setup.md) (ruoli delle
+  superfici web, past_due→portale, gotcha prefetch-bot e cancel-loop);
+  [local-dev-testing.md](content/knowledge/local-dev-testing.md) (ricetta per
+  mintare il token di upgrade + precedenza `UPGRADE_TOKEN_SECRET`). Codice:
+  `SiteNav`, `globals.css` (`.btn-outline`), `account/{page,actions}`,
+  `upgrade/{page,actions}`, `AutoSubmit.tsx`, `gate.ts` (+4 test), `.env.example`.
+- **Follow-ups:** l'interstitial `/upgrade` non fa più da checkpoint «quale
+  account sto pagando» — rivalutare se emergono studi multi-account; valutare
+  label nav session-aware («Account» da loggati) se il copy «Accedi» confonde.
+
 ## 2026-07-08 — Loop di test locale end-to-end (DB locale + auth finta)
 
 - **Did:** reso testabile *tutto* l'app in locale senza account esterni, dopo la

@@ -69,6 +69,31 @@ export function getTrialLimits(): TrialLimits {
   return { total: getTrialLimit(), daily: getDailyLimit() };
 }
 
+export type TrialUsageView = {
+  label: string;
+  pct: number;
+  inDailyPhase: boolean;
+};
+
+/**
+ * How the account/upgrade pages present trial usage: within the upfront pool
+ * show "X/50"; once it's spent show the daily allowance as "X/20 oggi"
+ * (the daily counter resets at Rome midnight via the increment_usage RPC).
+ */
+export function trialUsageView(
+  usage: TrialUsage,
+  limits: TrialLimits = getTrialLimits(),
+): TrialUsageView {
+  const inDailyPhase = usage.total > limits.total;
+  const used = inDailyPhase ? usage.daily : usage.total;
+  const cap = inDailyPhase ? limits.daily : limits.total;
+  return {
+    label: `${Math.min(used, cap)}/${cap}${inDailyPhase ? " oggi" : ""}`,
+    pct: Math.min(100, Math.round((used / cap) * 100)),
+    inDailyPhase,
+  };
+}
+
 /**
  * The paywall upgrade link. When we know the user id we append a short-lived
  * signed token so the upgrade page can go straight to checkout without a
