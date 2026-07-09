@@ -1,15 +1,16 @@
 ---
-title: MCP server — auth setup (WorkOS AuthKit) for developers
+title: MCP server — auth setup (Better Auth) for developers
 status: active
 owner: ttassi
 updated: 2026-07-07
-tags: [mcp, auth, oauth, workos, vercel, engineering, runbook]
+tags: [mcp, auth, oauth, better-auth, supabase, vercel, engineering, runbook]
 ---
 
 # MCP server — auth setup (for developers)
 
 How the Dott. Comm. MCP server authenticates clients, and the steps to turn auth
-on. Decision context: [ADR 0001](../decisions/0001-mcp-in-nextjs-app-workos-auth.md).
+on. Decision context: [ADR 0012](../decisions/0012-mcp-auth-better-auth-self-hosted.md)
+(supersedes [ADR 0001](../decisions/0001-mcp-in-nextjs-app-workos-auth.md)).
 For the end-user "how do I connect" guide, see [mcp-user-guide.md](./mcp-user-guide.md).
 The billing/paywall layer that sits on top of this auth: [billing-setup.md](./billing-setup.md).
 Setting up from scratch? Follow the ordered checklist in
@@ -17,24 +18,53 @@ Setting up from scratch? Follow the ordered checklist in
 
 ## How it works
 
-The MCP server (`companies/dott-comm/code/`) is an OAuth 2.1 **Resource Server**.
-It does **not** issue tokens or run a login UI — **WorkOS AuthKit** does that.
-The server only *verifies* the bearer JWT that clients present.
+Auth is **self-hosted Better Auth**, running in-process in the Next.js app. It is
+BOTH the website's session provider AND the OAuth 2.1 **Authorization Server** for
+the MCP. Better Auth stores its tables in the same Supabase Postgres as billing,
+over a **direct `pg` connection** (`DATABASE_URL`), separate from the Supabase
+service-role client billing uses.
+
+The MCP endpoint itself stays a pure OAuth 2.1 **Resource Server**: it does not
+run a login UI; it verifies the bearer token clients present.
 
 ```
-MCP client ──(1) discover──▶ /.well-known/oauth-protected-resource ──▶ points at AuthKit
-           ──(2) login/DCR─▶ WorkOS AuthKit  ──▶ issues JWT access token
-           ──(3) call+token▶ /api/mcp        ──▶ verifies JWT vs AuthKit JWKS
+MCP client ──(1) discover──▶ /.well-known/oauth-protected-resource ──▶ points at this origin (the AS)
+           ──(2) discover──▶ /.well-known/oauth-authorization-server ──▶ authorize/token/register endpoints
+           ──(3) login/DCR─▶ Better Auth (/sign-in, /consent, DCR) ──▶ issues OPAQUE access token
+           ──(4) call+token▶ /api/mcp ──▶ verifies token by INTROSPECTION (auth.api.getMcpSession)
 ```
 
-Relevant code:
+Sign-in is **email magic link only** — no passwords, no external IdP (Google was
+deliberately dropped; see [ADR 0012](../decisions/0012-mcp-auth-better-auth-self-hosted.md)).
+Better Auth issues **opaque** access tokens (random strings in `oauthAccessToken`),
+not JWTs — so the resource server verifies a bearer by **introspection**, not by
+decoding a JWT against JWKS. Audience/resource binding is enforced by the AS at
+token-issue time (the `resource` option on the `mcp` plugin), so there is no `aud`
+claim for the resource server to re-check.
 
-- `src/app/api/[transport]/route.ts` — the MCP handler + `withMcpAuth`. `verifyToken`
-  validates the JWT against AuthKit's JWKS (`/oauth2/jwks`), checking `issuer`
-  (the AuthKit domain) and `audience` (this server's MCP URL). Verification uses
-  `jose`; no WorkOS SDK is needed server-side.
-- `src/app/.well-known/oauth-protected-resource/route.ts` — RFC 9728 metadata that
-  advertises the AuthKit domain as the authorization server.
+Relevant code (`companies/dott-comm/code/`):
+
+- `src/lib/auth.ts` — the Better Auth instance: magic-link sign-in (Resend
+  sender, console-log fallback when `RESEND_API_KEY` is unset), and the `mcp`
+  plugin (OAuth AS: discovery, DCR, token endpoint, `/mcp/get-session`
+  introspection). `resource: MCP_RESOURCE_URL` binds issued tokens.
+- `src/lib/auth-client.ts` — browser client (`magicLinkClient` + `oidcClient`)
+  used by the sign-in and consent pages.
+- `src/app/api/auth/[...all]/route.ts` — Better Auth catch-all (login,
+  magic-link verify, OAuth endpoints, DCR, consent, introspection).
+- `src/app/api/[transport]/route.ts` — the MCP handler + `withMcpAuth`.
+  `verifyToken` calls `auth.api.getMcpSession({ headers })` and maps `userId`
+  into `AuthInfo.extra` for the billing gate.
+- `src/app/.well-known/oauth-protected-resource/route.ts` — RFC 9728 metadata
+  (`oAuthProtectedResourceMetadata(auth)`), advertises the `resource` + this
+  origin as the AS.
+- `src/app/.well-known/oauth-authorization-server/route.ts` — RFC 8414 metadata
+  (`oAuthDiscoveryMetadata(auth)`); MCP clients fetch this at the site root.
+- `src/app/sign-in/page.tsx` + `src/components/SignInForm.tsx` — magic-link UI.
+- `src/app/consent/page.tsx` + `src/components/ConsentForm.tsx` — OAuth consent
+  screen for DCR clients (POSTs to `/api/auth/oauth2/consent`).
+- `src/proxy.ts` — optimistic session-cookie guard for `/account`
+  (`getSessionCookie`); server components re-validate via `auth.api.getSession`.
 - `.env.example` — the env vars below.
 
 ## Environment variables
@@ -42,38 +72,46 @@ Relevant code:
 | Var | Purpose | Example |
 |---|---|---|
 | `MCP_REQUIRE_AUTH` | Enforce auth. Off = open (dev). | `true` |
-| `AUTHKIT_DOMAIN` | AuthKit domain = OAuth issuer + JWKS base. | `https://your-app.authkit.app` |
-| `MCP_RESOURCE_URL` | This server's public MCP URL = token audience. Must match the Resource Indicator in WorkOS. | `https://dott-comm.vercel.app/api/mcp` |
-
-Fail-closed: if `MCP_REQUIRE_AUTH=true` but `AUTHKIT_DOMAIN`/`MCP_RESOURCE_URL`
-are missing, every request is rejected rather than accepting unverifiable tokens.
+| `BETTER_AUTH_URL` | App base URL = OAuth issuer origin (no trailing slash). | `https://www.dottcomm.dev` |
+| `BETTER_AUTH_SECRET` | Server secret (sessions/tokens). ≥32 chars. | `openssl rand -base64 32` |
+| `DATABASE_URL` | Direct Postgres connection for Better Auth's tables (Supabase **session pooler**, port 5432). | `postgres://…:5432/postgres` |
+| `RESEND_API_KEY` | Sends magic-link emails (verified sender domain). Unset → link logged to server console (dev). | — |
+| `MAGIC_LINK_FROM` | From address for magic-link emails. | `DottComm <accesso@dottcomm.dev>` |
+| `MCP_RESOURCE_URL` | This server's public MCP URL = the token `resource`. | `https://www.dottcomm.dev/api/mcp` |
 
 ## Setup steps
 
-1. **WorkOS Dashboard**
-   - Note your **AuthKit domain** → `AUTHKIT_DOMAIN`.
-   - Register the MCP server URL as a **Resource Indicator** (must equal
-     `MCP_RESOURCE_URL`).
-   - Enable **Dynamic Client Registration (DCR)** for MCP clients that don't yet
-     support Client ID Metadata Documents.
-2. **Set env vars** — locally (copy `.env.example` → `.env.local`) and in the
-   Vercel project (Preview + Production). Keep `MCP_REQUIRE_AUTH=false` until
-   the Dashboard side is ready.
-3. **Flip enforcement** — set `MCP_REQUIRE_AUTH=true` and redeploy.
+1. **Provision Better Auth's tables in Supabase — via the declarative schema,
+   NOT `@better-auth/cli migrate`** (ADR 0007 owns the migration history). The
+   DDL Better Auth needs is captured verbatim in `supabase/schemas/03_auth.sql`
+   (emitted by `@better-auth/cli generate`); the rename + auth tables ship in
+   `supabase/migrations/00004_better_auth_and_user_id.sql`. Apply it with
+   `npm run db:push`, then regenerate types with `npm run db:types`. After a
+   Better Auth **upgrade**, re-run `npx @better-auth/cli generate --config
+   src/lib/auth.ts` and diff its output against `03_auth.sql`; fold any change in
+   through `db:diff` (never edit the auth tables by hand).
+2. **Resend** → `RESEND_API_KEY` + a verified sender domain (`MAGIC_LINK_FROM`,
+   e.g. `DottComm <accesso@dottcomm.dev>`). Until the domain verifies,
+   `onboarding@resend.dev` only delivers to your own address.
+3. **Set env vars** — locally (`.env.example` → `.env.local`) and in Vercel
+   (Preview + Production). Keep `MCP_REQUIRE_AUTH=false` until ready. Use a
+   distinct `BETTER_AUTH_SECRET` for prod.
+4. **Flip enforcement** — set `MCP_REQUIRE_AUTH=true` and redeploy.
 
 ## Verify
 
-With auth **on**, from the deployed (or `next start`) server:
+Discovery + unauth behavior, against the deployed (or `next start`) server:
 
 ```bash
-BASE=<your-mcp-url>            # e.g. https://dott-comm.vercel.app/api/mcp
-# No token → 401 with a WWW-Authenticate: ... resource_metadata=... header
-curl -s -i -X POST "$BASE" -H 'Content-Type: application/json' \
-  -H 'Accept: application/json,text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | grep -iE 'HTTP/|www-authenticate'
-# Metadata advertises the AuthKit domain
-curl -s "${BASE%/api/mcp}/.well-known/oauth-protected-resource"
+node scripts/check-oauth.mjs https://www.dottcomm.dev/api/mcp
+# [1] protected-resource metadata advertises resource === your MCP URL
+# [2] AS metadata exposes authorize/token/registration (DCR) endpoints
+# [3] unauthenticated POST → 401 + WWW-Authenticate: … resource_metadata=…
 ```
+
+A token only fully proves out by connecting a real MCP client (e.g. Claude): DCR
+registers a client, `/sign-in` then `/consent` complete, a gated tool call
+succeeds and increments the `users_billing` row for the Better Auth user id.
 
 With auth **off**, `tools/list` returns the registered tools without a token.
 
@@ -83,8 +121,10 @@ With auth **off**, `tools/list` returns the registered tools without a token.
 
 ## Open items
 
-- **Scopes:** `requiredScopes` is not enforced yet — any valid AuthKit token is
-  accepted. Once a WorkOS scope/permission model exists, enforce it in
-  `withMcpAuth` and map claims in `verifyToken`.
+- **Scopes:** `requiredScopes` is not enforced yet — any valid Better Auth token
+  is accepted. Once a scope model exists, enforce it in `withMcpAuth` and map
+  scopes from the introspected session in `verifyToken`.
 - **Statelessness:** `mcp-handler` runs stateless (no Redis). Revisit if a
   transport needs server-side sessions.
+- **Cost:** this migration removed the ~$100/mo WorkOS bill; cancel the WorkOS
+  subscription only after an MCP client reconnects cleanly against Better Auth.

@@ -1,11 +1,8 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { AutoSubmit } from "@/components/AutoSubmit";
 import { BillingShell } from "@/components/BillingShell";
-import {
-  getBillingRow,
-  getDailyLimit,
-  getTrialLimit,
-  type Plan,
-} from "@/lib/billing/gate";
+import { getBillingRow, trialUsageView, type Plan } from "@/lib/billing/gate";
 import { verifyUpgradeToken } from "@/lib/billing/upgrade-token";
 import { openCustomerPortal, signIn, startCheckout } from "./actions";
 
@@ -21,10 +18,11 @@ const PLAN_LABELS: Record<Plan, string> = {
 export default async function UpgradePage({
   searchParams,
 }: {
-  searchParams: Promise<{ t?: string }>;
+  searchParams: Promise<{ t?: string; canceled?: string }>;
 }) {
-  const { t } = await searchParams;
-  const { user } = await withAuth();
+  const { t, canceled } = await searchParams;
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user ?? null;
 
   // A signed session always wins; the token only matters when signed out. The
   // token lets a paywalled MCP user reach checkout without re-authenticating.
@@ -52,24 +50,24 @@ export default async function UpgradePage({
 
   const row = await getBillingRow(effectiveUserId);
   const plan: Plan = row?.plan ?? "trial";
-  const usage = row?.usage_count ?? 0;
-  const limit = getTrialLimit();
-  // Trial is "upfront pool, then daily": once the pool is spent, show the
-  // recurring daily allowance (resets at Rome midnight) instead of a stuck 50/50.
-  const inDailyPhase = usage > limit;
-  const dailyUsage = row?.daily_usage_count ?? 0;
-  const dailyLimit = getDailyLimit();
-  const usageLabel = inDailyPhase
-    ? `${Math.min(dailyUsage, dailyLimit)}/${dailyLimit} oggi`
-    : `${Math.min(usage, limit)}/${limit}`;
-  const usagePct = Math.min(
-    100,
-    Math.round(
-      ((inDailyPhase ? dailyUsage : usage) /
-        (inDailyPhase ? dailyLimit : limit)) *
-        100,
-    ),
-  );
+  const trialUsage = trialUsageView({
+    total: row?.usage_count ?? 0,
+    daily: row?.daily_usage_count ?? 0,
+  });
+
+  // active: nothing to buy. past_due: the subscription exists — a new checkout
+  // would risk a second one; the fix (update the card) lives in the portal.
+  const managedInPortal = plan === "active" || plan === "past_due";
+
+  // A visitor who reached this page wants to subscribe — forward them straight
+  // to Stripe Checkout instead of asking for one more click. Never when
+  // returning from a canceled checkout (?canceled=1 would loop them back in),
+  // and only when Stripe is actually configured.
+  const autoCheckout =
+    !canceled &&
+    !managedInPortal &&
+    !!process.env.STRIPE_SECRET_KEY &&
+    !!process.env.STRIPE_PRICE_ID;
 
   return (
     <BillingShell>
@@ -77,12 +75,16 @@ export default async function UpgradePage({
       <h1>
         {plan === "active"
           ? "Il tuo abbonamento è attivo"
-          : "Continua senza limiti"}
+          : plan === "past_due"
+            ? "Aggiorna il metodo di pagamento"
+            : "Continua senza limiti"}
       </h1>
       <p className="billing-lede">
         {plan === "active"
           ? "Hai accesso illimitato agli strumenti di DottComm. Puoi gestire o disdire l'abbonamento in qualsiasi momento."
-          : "La prova gratuita include un numero limitato di chiamate agli strumenti. Con l'abbonamento mensile usi DottComm senza limiti."}
+          : plan === "past_due"
+            ? "L'ultimo pagamento del tuo abbonamento non è riuscito. Aggiorna il metodo di pagamento dal portale Stripe per non perdere l'accesso."
+            : "La prova gratuita include un numero limitato di chiamate agli strumenti. Con l'abbonamento mensile usi DottComm senza limiti."}
       </p>
 
       <div className="billing-card">
@@ -102,20 +104,20 @@ export default async function UpgradePage({
           <>
             <div className="billing-row">
               <dt>Utilizzo prova gratuita</dt>
-              <dd>{usageLabel} chiamate</dd>
+              <dd>{trialUsage.label} chiamate</dd>
             </div>
             <div className="billing-usage-track">
               <div
                 className="billing-usage-bar"
-                style={{ width: `${usagePct}%` }}
+                style={{ width: `${trialUsage.pct}%` }}
               />
             </div>
           </>
         )}
 
-        {plan === "active" ? (
+        {managedInPortal ? (
           viaToken ? (
-            // Managing an active plan requires the sensitive portal, which is
+            // Managing a subscription requires the sensitive portal, which is
             // never reachable by token — send the user through a real login.
             <form className="billing-cta-form" action={signIn}>
               <button className="cta-btn cta-btn--big" type="submit">
@@ -140,13 +142,16 @@ export default async function UpgradePage({
         ) : (
           <form className="billing-cta-form" action={startCheckout}>
             {viaToken && <input type="hidden" name="t" value={t} />}
+            {autoCheckout && <AutoSubmit />}
             <button className="cta-btn cta-btn--big" type="submit">
-              {plan === "past_due" || plan === "canceled"
+              {plan === "canceled"
                 ? "Riattiva l'abbonamento"
                 : "Attiva l'abbonamento"}
             </button>
             <span className="billing-note">
-              Pagamento sicuro con Stripe. Disdici quando vuoi.
+              {autoCheckout
+                ? "Ti stiamo portando al pagamento sicuro Stripe…"
+                : "Pagamento sicuro con Stripe. Disdici quando vuoi."}
             </span>
           </form>
         )}

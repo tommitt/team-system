@@ -32,7 +32,7 @@ export type GateDecision = {
 };
 
 export type BillingRow = {
-  workos_user_id: string;
+  user_id: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   plan: Plan;
@@ -69,10 +69,35 @@ export function getTrialLimits(): TrialLimits {
   return { total: getTrialLimit(), daily: getDailyLimit() };
 }
 
+export type TrialUsageView = {
+  label: string;
+  pct: number;
+  inDailyPhase: boolean;
+};
+
+/**
+ * How the account/upgrade pages present trial usage: within the upfront pool
+ * show "X/50"; once it's spent show the daily allowance as "X/20 oggi"
+ * (the daily counter resets at Rome midnight via the increment_usage RPC).
+ */
+export function trialUsageView(
+  usage: TrialUsage,
+  limits: TrialLimits = getTrialLimits(),
+): TrialUsageView {
+  const inDailyPhase = usage.total > limits.total;
+  const used = inDailyPhase ? usage.daily : usage.total;
+  const cap = inDailyPhase ? limits.daily : limits.total;
+  return {
+    label: `${Math.min(used, cap)}/${cap}${inDailyPhase ? " oggi" : ""}`,
+    pct: Math.min(100, Math.round((used / cap) * 100)),
+    inDailyPhase,
+  };
+}
+
 /**
  * The paywall upgrade link. When we know the user id we append a short-lived
- * signed token so the upgrade page can go straight to checkout without an
- * AuthKit re-login (see upgrade-token.ts).
+ * signed token so the upgrade page can go straight to checkout without a
+ * re-login (see upgrade-token.ts).
  */
 function upgradeUrl(userId?: string): string {
   const site = (
@@ -91,7 +116,7 @@ const DB_ERROR_MESSAGE =
 /**
  * Pure decision function — kept separate so paid caps can be added later.
  * `userId`, when passed, is embedded in a signed token in the upgrade URL so
- * the paywall link skips AuthKit re-login.
+ * the paywall link skips re-login.
  *
  * Trial model is "50 upfront, then 20/day": while lifetime usage is within the
  * upfront pool (`limits.total`) any pace is fine; once it's spent the user is
@@ -176,19 +201,19 @@ export function decide(
  * the row is already past the limit).
  */
 export async function checkAndRecordUsage(
-  workosUserId: string,
+  userId: string,
 ): Promise<GateDecision> {
   const limits = getTrialLimits();
   try {
     const { data, error } = await getSupabaseAdmin()
-      .rpc("increment_usage", { p_workos_user_id: workosUserId })
+      .rpc("increment_usage", { p_user_id: userId })
       .single<{ usage_count: number; daily_usage_count: number; plan: Plan }>();
     if (error || !data) throw error ?? new Error("increment_usage returned no row");
     return decide(
       data.plan,
       { total: data.usage_count, daily: data.daily_usage_count },
       limits,
-      workosUserId,
+      userId,
     );
   } catch (err) {
     console.error("Billing gate failed (blocking call, fail closed):", err);
@@ -206,14 +231,14 @@ export async function checkAndRecordUsage(
 
 /** Read-only billing row lookup (for the website's upgrade/account pages). */
 export async function getBillingRow(
-  workosUserId: string,
+  userId: string,
 ): Promise<BillingRow | null> {
   const { data, error } = await getSupabaseAdmin()
     .from("users_billing")
     .select(
-      "workos_user_id, stripe_customer_id, stripe_subscription_id, plan, usage_count, daily_usage_count, daily_usage_date, trial_started_at",
+      "user_id, stripe_customer_id, stripe_subscription_id, plan, usage_count, daily_usage_count, daily_usage_date, trial_started_at",
     )
-    .eq("workos_user_id", workosUserId)
+    .eq("user_id", userId)
     .maybeSingle<BillingRow>();
   if (error) throw error;
   return data;

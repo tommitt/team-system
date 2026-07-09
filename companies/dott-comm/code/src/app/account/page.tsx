@@ -1,14 +1,10 @@
-import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { withAuth } from "@workos-inc/authkit-nextjs";
+import { auth } from "@/lib/auth";
 import { BillingShell } from "@/components/BillingShell";
-import {
-  getBillingRow,
-  getDailyLimit,
-  getTrialLimit,
-  type Plan,
-} from "@/lib/billing/gate";
-import { openCustomerPortal } from "../upgrade/actions";
+import { getBillingRow, trialUsageView, type Plan } from "@/lib/billing/gate";
+import { openCustomerPortal, startCheckout } from "../upgrade/actions";
+import { signOut } from "./actions";
 
 export const metadata = { title: "Account — DottComm" };
 
@@ -20,24 +16,20 @@ const PLAN_LABELS: Record<Plan, string> = {
 };
 
 export default async function AccountPage() {
-  // The proxy's middlewareAuth redirects signed-out visitors to AuthKit before
-  // this renders; the redirect below is only a belt-and-braces fallback
-  // (ensureSignedIn would try to set a PKCE cookie, illegal during render).
-  const { user } = await withAuth();
-  if (!user) redirect("/upgrade");
+  // The proxy redirects signed-out visitors to /sign-in before this renders;
+  // the redirect below is a belt-and-braces fallback if the optimistic cookie
+  // check let a request through with no valid session.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in?returnTo=/account");
+  const user = session.user;
 
   const row = await getBillingRow(user.id);
   const plan: Plan = row?.plan ?? "trial";
   const usage = row?.usage_count ?? 0;
-  const limit = getTrialLimit();
-  // Trial is "upfront pool, then daily": once the pool is spent, usage is the
-  // recurring daily allowance (resets at Rome midnight).
-  const inDailyPhase = usage > limit;
-  const dailyUsage = row?.daily_usage_count ?? 0;
-  const dailyLimit = getDailyLimit();
-  const trialUsageLabel = inDailyPhase
-    ? `${Math.min(dailyUsage, dailyLimit)}/${dailyLimit} oggi`
-    : `${Math.min(usage, limit)}/${limit}`;
+  const trialUsage = trialUsageView({
+    total: usage,
+    daily: row?.daily_usage_count ?? 0,
+  });
 
   return (
     <BillingShell>
@@ -60,26 +52,43 @@ export default async function AccountPage() {
         </div>
         <div className="billing-row">
           <dt>Chiamate effettuate</dt>
-          <dd>{plan === "trial" ? trialUsageLabel : usage}</dd>
+          <dd>{plan === "trial" ? trialUsage.label : usage}</dd>
         </div>
+        {plan === "trial" && (
+          <div className="billing-usage-track">
+            <div
+              className="billing-usage-bar"
+              style={{ width: `${trialUsage.pct}%` }}
+            />
+          </div>
+        )}
 
         {row?.stripe_customer_id ? (
           <form className="billing-cta-form" action={openCustomerPortal}>
             <button className="cta-btn cta-btn--big" type="submit">
-              Gestisci abbonamento
+              Gestisci abbonamento su Stripe
             </button>
             <span className="billing-note">
               Fatture, metodo di pagamento e disdetta nel portale sicuro Stripe.
             </span>
           </form>
         ) : (
-          <div className="billing-cta-form">
-            <Link className="cta-btn cta-btn--big" href="/upgrade">
+          <form className="billing-cta-form" action={startCheckout}>
+            <button className="cta-btn cta-btn--big" type="submit">
               Attiva l&apos;abbonamento
-            </Link>
-          </div>
+            </button>
+            <span className="billing-note">
+              Pagamento sicuro con Stripe. Disdici quando vuoi.
+            </span>
+          </form>
         )}
       </div>
+
+      <form className="billing-signout" action={signOut}>
+        <button className="btn-outline" type="submit">
+          Disconnetti
+        </button>
+      </form>
     </BillingShell>
   );
 }

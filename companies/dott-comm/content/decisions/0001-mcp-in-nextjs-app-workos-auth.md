@@ -4,11 +4,16 @@ status: accepted
 date: 2026-07-06
 deciders: [ttassi]
 supersedes:
-superseded-by:
+superseded-by: 0012
 tags: [mcp, architecture, vercel, nextjs, auth, oauth, workos]
 ---
 
 # 0001. Serve the MCP server from the website's Next.js app, auth via WorkOS AuthKit
+
+> **Superseded by [ADR 0012](0012-mcp-auth-better-auth-self-hosted.md)** (auth
+> only). Decision 1 (co-locate the MCP server in the Next.js app) still holds;
+> decision 2 (WorkOS AuthKit as the Authorization Server) was replaced by
+> self-hosted Better Auth to remove the ~$100/mo cost.
 
 ## Context
 

@@ -22,6 +22,10 @@ export function SiteNav() {
             Prezzi
           </ScrollLink>
           <StartButton variant="nav" />
+          {/* Plain link: the proxy bounces signed-out visitors to /sign-in. */}
+          <Link className="btn-outline" href="/account">
+            Accedi
+          </Link>
         </div>
       </div>
     </nav>

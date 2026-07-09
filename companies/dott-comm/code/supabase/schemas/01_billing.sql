@@ -6,12 +6,13 @@
 -- See content/knowledge/db-schema-migrations.md. It folds together the history in
 -- supabase/migrations/00001_users_billing.sql + 00002_daily_usage.sql.
 --
--- Identity lives in WorkOS (workos_user_id = JWT `sub`), money in Stripe; this
--- table holds request-time entitlement: plan + usage counters + Stripe mapping.
--- Access is service-role only (RLS enabled with zero policies).
+-- Identity lives in Better Auth (user_id = the Better Auth user id, self-hosted
+-- in this same Postgres — see ADR 0012), money in Stripe; this table holds
+-- request-time entitlement: plan + usage counters + Stripe mapping. Access is
+-- service-role only (RLS enabled with zero policies).
 
 create table public.users_billing (
-  workos_user_id         text primary key,
+  user_id                text primary key,
   stripe_customer_id     text unique,
   stripe_subscription_id text,
   plan                   text not null default 'trial'
@@ -33,20 +34,27 @@ create index users_billing_stripe_customer_idx
 alter table public.users_billing enable row level security;
 -- No policies: only the service-role key (which bypasses RLS) can touch this table.
 
+-- The billing gate reads/writes this table via PostgREST as `service_role`. Grant
+-- it explicitly so a from-migrations rebuild reproduces the working state without
+-- relying on Supabase's platform default privileges (which a bare `supabase start`
+-- doesn't apply for CLI-migrated tables). service_role bypasses RLS, but still
+-- needs the table-level DML grant.
+grant select, insert, update, delete on table public.users_billing to service_role;
+
 -- Atomic lazy-provision + increment in one round trip, maintaining both the
 -- lifetime counter and the per-day counter. Returns the NEW counts and current
 -- plan so the caller can gate without a second query.
-create or replace function public.increment_usage(p_workos_user_id text)
+create or replace function public.increment_usage(p_user_id text)
 returns table (usage_count integer, daily_usage_count integer, plan text)
 language sql
 security definer
 set search_path = public
 as $$
   insert into public.users_billing as ub
-    (workos_user_id, usage_count, daily_usage_count, daily_usage_date)
+    (user_id, usage_count, daily_usage_count, daily_usage_date)
   values
-    (p_workos_user_id, 1, 1, (now() at time zone 'Europe/Rome')::date)
-  on conflict (workos_user_id) do update
+    (p_user_id, 1, 1, (now() at time zone 'Europe/Rome')::date)
+  on conflict (user_id) do update
     set usage_count = ub.usage_count + 1,
         daily_usage_count = case
           when ub.daily_usage_date = (now() at time zone 'Europe/Rome')::date

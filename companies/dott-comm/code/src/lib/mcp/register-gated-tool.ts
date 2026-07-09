@@ -17,7 +17,7 @@ import { recordToolEvent } from "./telemetry";
  * only the billing gate can block a call. Note: Zod validation failures are
  * rejected by the MCP SDK before this wrapper runs, so they aren't captured.
  *
- * The WorkOS user id comes from the verified JWT (`extra.authInfo.extra.userId`,
+ * The user id comes from the verified access token (`extra.authInfo.extra.userId`,
  * set in `app/api/[transport]/route.ts`). Dev escape hatches when auth is off:
  * set `MCP_DEV_USER_ID` to exercise the gate against a fake user, or leave it
  * unset to run ungated (so the pure fiscal tools work without Supabase).
@@ -28,7 +28,7 @@ import { recordToolEvent } from "./telemetry";
  * keep working when the paywall blocks a user.
  */
 
-/** WorkOS user id from the verified JWT, or the dev escape hatches (see above). */
+/** User id from the verified access token, or the dev escape hatches (see above). */
 export function resolveUserId(extra: {
   authInfo?: { extra?: Record<string, unknown> };
 }): string | undefined {

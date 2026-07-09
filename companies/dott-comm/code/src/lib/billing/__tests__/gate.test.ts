@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decide, type TrialLimits } from "../gate";
+import { decide, trialUsageView, type TrialLimits } from "../gate";
 
 // Small limits keep the phase boundaries obvious. WARN_RATIO is 0.8, so the
 // phase-1 warning starts at ceil(10*0.8)=8 and the daily one at ceil(4*0.8)=4.
@@ -57,6 +57,28 @@ describe("decide — trial, phase 2 (recurring daily allowance)", () => {
     expect(d.dailyLimit).toBe(4);
     expect(d.usageCount).toBe(30);
     expect(d.limit).toBe(10);
+  });
+});
+
+describe("trialUsageView — how the account/upgrade pages present usage", () => {
+  it("shows the pool label and percentage while within the pool", () => {
+    const v = trialUsageView({ total: 3, daily: 3 }, LIMITS);
+    expect(v).toEqual({ label: "3/10", pct: 30, inDailyPhase: false });
+  });
+
+  it("stays in the pool phase at the exact boundary (total === limit)", () => {
+    const v = trialUsageView({ total: 10, daily: 10 }, LIMITS);
+    expect(v).toEqual({ label: "10/10", pct: 100, inDailyPhase: false });
+  });
+
+  it("switches to the daily label once the pool is spent", () => {
+    const v = trialUsageView({ total: 11, daily: 2 }, LIMITS);
+    expect(v).toEqual({ label: "2/4 oggi", pct: 50, inDailyPhase: true });
+  });
+
+  it("clamps the label and percentage past the daily cap", () => {
+    const v = trialUsageView({ total: 30, daily: 9 }, LIMITS);
+    expect(v).toEqual({ label: "4/4 oggi", pct: 100, inDailyPhase: true });
   });
 });
 

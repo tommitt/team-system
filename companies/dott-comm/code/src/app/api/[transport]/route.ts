@@ -1,6 +1,6 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { auth } from "@/lib/auth";
 import { registerTools } from "@/lib/mcp/tools";
 
 /**
@@ -10,16 +10,15 @@ import { registerTools } from "@/lib/mcp/tools";
  * alongside the website (one project, one domain). The `[transport]` segment
  * lets mcp-handler serve both `/api/mcp` (Streamable HTTP) and `/api/sse`.
  *
- * Auth: OAuth 2.1 resource server. WorkOS AuthKit is the Authorization Server
- * (it issues tokens and handles login / Dynamic Client Registration); this
- * server only *verifies* the incoming bearer JWT against AuthKit's JWKS. See
- * `app/.well-known/oauth-protected-resource/route.ts` for the discovery
- * metadata that points clients at AuthKit.
+ * Auth: OAuth 2.1 resource server. Better Auth (in-process) is the Authorization
+ * Server — it handles login, Dynamic Client Registration, and token issuance
+ * (see `lib/auth.ts`). Better Auth issues OPAQUE access tokens (random strings
+ * in `oauthAccessToken`), so this server verifies a bearer by INTROSPECTION via
+ * `auth.api.getMcpSession` — not by decoding a JWT. Audience/resource binding is
+ * enforced by the AS at issue time (the `resource` option in `lib/auth.ts`), so
+ * there is no `aud` claim for the resource server to re-check.
  *
- * Enforcement is gated by `MCP_REQUIRE_AUTH=true`. Required env when on:
- *   - AUTHKIT_DOMAIN     e.g. https://your-app.authkit.app  (issuer + JWKS base)
- *   - MCP_RESOURCE_URL   this server's public MCP URL, the token audience
- *                        e.g. https://dott-comm.vercel.app/api/mcp
+ * Enforcement is gated by `MCP_REQUIRE_AUTH=true`.
  */
 // Server-level instructions (MCP `initialize` result): the feedback protocol
 // that makes `invia_feedback` fire without the user knowing the tool exists.
@@ -44,66 +43,30 @@ const handler = createMcpHandler(
 
 const requireAuth = process.env.MCP_REQUIRE_AUTH === "true";
 
-// JWKS set is cached across invocations by `jose`. Lazily created so a missing
-// AUTHKIT_DOMAIN doesn't throw at import time when auth is disabled.
-let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
-function getJwks(authkitDomain: string) {
-  if (!jwks) {
-    jwks = createRemoteJWKSet(new URL("/oauth2/jwks", authkitDomain));
-  }
-  return jwks;
-}
-
-// Verify a WorkOS AuthKit access token (a JWT) and map it to MCP AuthInfo.
-// Returning undefined causes `withMcpAuth` to reject when `required` is true.
+// Verify a Better Auth access token by introspection and map it to MCP
+// AuthInfo. `getMcpSession` reads the Bearer token from the request headers,
+// looks it up in `oauthAccessToken`, and rejects expired/unknown tokens.
+// Returning undefined makes `withMcpAuth` reject when `required` is true.
 const verifyToken = async (
-  _req: Request,
+  req: Request,
   bearerToken?: string,
 ): Promise<AuthInfo | undefined> => {
   if (!bearerToken) return undefined;
 
-  const authkitDomain = process.env.AUTHKIT_DOMAIN;
-  const audience = process.env.MCP_RESOURCE_URL;
-  if (!authkitDomain || !audience) {
-    // Misconfiguration: fail closed rather than accept unverifiable tokens.
-    console.error(
-      "MCP auth is enabled but AUTHKIT_DOMAIN / MCP_RESOURCE_URL are not set.",
-    );
-    return undefined;
-  }
-
   try {
-    const { payload } = await jwtVerify(bearerToken, getJwks(authkitDomain), {
-      issuer: authkitDomain,
-      audience,
-    });
-
-    const scopes =
-      typeof payload.scope === "string" ? payload.scope.split(" ") : [];
+    const session = await auth.api.getMcpSession({ headers: req.headers });
+    if (!session) return undefined;
 
     return {
       token: bearerToken,
-      clientId: (payload.azp as string) ?? (payload.client_id as string) ?? "",
-      scopes,
-      extra: { userId: payload.sub },
+      clientId: session.clientId ?? "",
+      scopes: session.scopes ? session.scopes.split(" ") : [],
+      // `userId` is read downstream by the billing gate
+      // (`lib/mcp/register-gated-tool.ts`) as `extra.authInfo.extra.userId`.
+      extra: { userId: session.userId },
     };
   } catch (err) {
-    // Log the mismatch explicitly: the most common cause is the token's `aud`
-    // or `iss` not matching what we expect (domain/path drift between the
-    // metadata resource, MCP_RESOURCE_URL, and the WorkOS Resource Indicator).
-    // Decode without verifying just to surface the claims — never trust these.
-    let claims: unknown;
-    try {
-      claims = JSON.parse(
-        Buffer.from(bearerToken.split(".")[1] ?? "", "base64url").toString(),
-      );
-    } catch {
-      claims = "<unparseable JWT payload>";
-    }
-    console.warn("MCP token verification failed:", (err as Error)?.message, {
-      expected: { issuer: authkitDomain, audience },
-      tokenClaims: claims,
-    });
+    console.warn("MCP token introspection failed:", (err as Error)?.message);
     return undefined;
   }
 };

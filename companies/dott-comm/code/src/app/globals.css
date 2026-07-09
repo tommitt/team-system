@@ -90,6 +90,17 @@ h2.on-dark { color: var(--on-dark); }
 }
 .btn-ghost-dark:hover { color: var(--on-dark); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.28); }
 
+/* secondary outline button on light surfaces (nav "Accedi", account "Esci") */
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--body); font-weight: 600; font-size: 14px;
+  color: var(--ink); padding: 10px 18px; border-radius: 9px;
+  background: transparent; border: 1px solid var(--line); cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.btn-outline:hover { background: rgba(20,19,31,0.04); border-color: rgba(20,19,31,0.28); }
+.btn-outline:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
 /* ---------- NAV ---------- */
 nav {
   position: sticky; top: 0; z-index: 50;
@@ -458,6 +469,7 @@ footer { padding: clamp(40px, 5vw, 64px) var(--pad); border-top: 1px solid var(-
   padding: 4px 10px; border-radius: 999px;
   background: rgba(91, 79, 255, 0.1); color: var(--violet);
 }
+.billing-signout { margin-top: 20px; }
 
 /* ---------- LEGAL PAGES (privacy / termini) ---------- */
 .legal-main { padding: clamp(52px, 8vw, 96px) var(--pad) clamp(48px, 7vw, 80px); }
@@ -483,4 +495,41 @@ footer { padding: clamp(40px, 5vw, 64px) var(--pad); border-top: 1px solid var(-
   .cta-btn:hover, .price-card--feat .price-cta:hover { transform: none; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
   .deco, .hero-card { animation: none; }
+}
+
+/* Sign-in / consent (Better Auth auth pages) */
+.billing-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.billing-input:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+.consent-scopes {
+  list-style: none;
+  margin: 4px auto 20px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.consent-scopes li {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--violet);
+  background: rgba(91, 79, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.consent-deny {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
 }

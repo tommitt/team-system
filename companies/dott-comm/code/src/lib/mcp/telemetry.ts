@@ -24,7 +24,7 @@ export type ToolEvent = {
 export async function recordToolEvent(event: ToolEvent): Promise<void> {
   try {
     const { error } = await getSupabaseAdmin().from("tool_events").insert({
-      workos_user_id: event.userId,
+      user_id: event.userId,
       tool: event.tool,
       session_id: event.sessionId ?? null,
       outcome: event.outcome,

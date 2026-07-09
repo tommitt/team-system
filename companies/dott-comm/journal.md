@@ -14,6 +14,112 @@ Format:
 
 ---
 
+## 2026-07-08 — UX billing web: «Accedi» in nav, /account autonomo, /upgrade auto-inoltra a Stripe
+
+- **Did:** dato un ingresso e un ruolo chiaro alle superfici billing del sito.
+  Nav: bottone outline **«Accedi»** (link statico a `/account`; il proxy gestisce
+  il rimbalzo a `/sign-in`, la landing resta statica). `/account` ora è la home
+  autonoma dell'utente: barra di utilizzo phase-aware (helper condiviso
+  `trialUsageView()` in `gate.ts`, unit-testato), checkout/portale Stripe
+  diretti (niente più deviazione su `/upgrade`), sign-out **«Disconnetti»**
+  (prima non esisteva alcun logout). `/upgrade` è diventato il dispatcher del
+  paywall: con identità risolvibile e piano pagabile **auto-inoltra a Stripe
+  Checkout** al mount (componente client `AutoSubmit` — i bot di link-preview
+  non eseguono JS, quindi un GET non crea mai sessioni/customer Stripe);
+  `cancel_url` = `/upgrade?canceled=1` (+ token) per evitare il redirect-loop;
+  **`past_due` → portale**, mai un nuovo checkout (rischio doppio abbonamento).
+  Documentato `DAILY_TOOL_CALL_LIMIT` in `.env.example` (il codice lo leggeva
+  già). Tutto verificato end-to-end sullo stack locale (magic link da console,
+  righe seedate via psql, Stripe test mode, Chrome headless per l'auto-forward
+  reale: `/upgrade?t=…` → checkout.stripe.com in ~1s senza click).
+- **Changed:**
+  [ADR 0013](content/decisions/0013-billing-web-ux-account-standalone-upgrade-dispatcher.md)
+  (nuova); [billing-setup.md](content/knowledge/billing-setup.md) (ruoli delle
+  superfici web, past_due→portale, gotcha prefetch-bot e cancel-loop);
+  [local-dev-testing.md](content/knowledge/local-dev-testing.md) (ricetta per
+  mintare il token di upgrade + precedenza `UPGRADE_TOKEN_SECRET`). Codice:
+  `SiteNav`, `globals.css` (`.btn-outline`), `account/{page,actions}`,
+  `upgrade/{page,actions}`, `AutoSubmit.tsx`, `gate.ts` (+4 test), `.env.example`.
+- **Follow-ups:** l'interstitial `/upgrade` non fa più da checkpoint «quale
+  account sto pagando» — rivalutare se emergono studi multi-account; valutare
+  label nav session-aware («Account» da loggati) se il copy «Accedi» confonde.
+
+## 2026-07-08 — Loop di test locale end-to-end (DB locale + auth finta)
+
+- **Did:** reso testabile *tutto* l'app in locale senza account esterni, dopo la
+  migrazione a Better Auth self-hosted. Un solo Postgres locale (Supabase CLI)
+  serve i tre consumatori: Better Auth (via `pg`), il gate billing (via PostgREST
+  service_role) e la telemetria. Le migrazioni `00001–00005` — incluse tabelle
+  Better Auth (`00004`) e grant `service_role` (`00005`) — si applicano allo
+  start, quindi il rebuild-from-migrations funziona su un DB vergine. Due loop di
+  auth "finti": **sessione web** = magic link stampato in console (nessun
+  `RESEND_API_KEY`); **MCP** = identità finta via `MCP_DEV_USER_ID` +
+  `MCP_REQUIRE_AUTH=false` (loop OAuth reale documentato via MCP Inspector).
+  Verificato sullo stack reale: 4 righe billing seedate, 7 tabelle Better Auth,
+  grant presenti, `increment_usage`/insert `tool_events` OK via PostgREST col
+  service_role JWT locale.
+- **Changed:**
+  - **Codice (`code/`):** nuovo `supabase/seed.sql` (stati billing deterministici
+    `dev_trial`/`dev_active`/`dev_canceled`/`dev_trial_spent`, idempotente, gira
+    su `db:reset`); nuovo `.env.local.example` (wiring completo verso lo stack
+    locale) + `.gitignore` (`!.env.local.example`); script npm
+    `db:start`/`db:stop`/`db:reset`/`db:status` in `package.json`. Nessuna
+    modifica al codice applicativo — riusata la escape hatch `MCP_DEV_USER_ID`.
+  - **Knowledge:** nuovo runbook
+    [content/knowledge/local-dev-testing.md](content/knowledge/local-dev-testing.md);
+    pointer da [dev-setup-guide.md](content/knowledge/dev-setup-guide.md) (che
+    resta la checklist prod/dashboard) e una riga in `companies/dott-comm/CLAUDE.md`.
+- **Follow-ups:** nessun ADR (è devex/runbook, non una scelta architetturale —
+  le decisioni stanno già in ADR 0012/0007/0002). Auto-apply migrazioni in CI
+  ancora rinviato (ADR 0007). Il loop OAuth reale locale (Inspector → DCR →
+  consent) è documentato ma va provato una volta end-to-end.
+
+## 2026-07-07 — Auth: da WorkOS AuthKit a Better Auth self-hosted (port su `main`)
+
+- **Did:** portato il lavoro del branch `migrate-auth-to-better-auth` (commit
+  `119be48`) su `main`, riapplicandolo file-per-file sopra l'evoluzione di `main`
+  (sorgenti sotto `src/`, schemi dichiarativi, MCP con instructions/telemetry).
+  Motivo: WorkOS costa ~$100/mese a traffico zero per la feature MCP/DCR, e
+  l'identità in WorkOS lascia Supabase cieco lato utente. Due scostamenti dal
+  branch: **solo magic link** (niente Google — nessun IdP esterno da configurare)
+  e **tabelle Better Auth via schema dichiarativo** (non `@better-auth/cli
+  migrate`), coerente con ADR 0007.
+- **Changed:**
+  - **Codice (`code/`):** deps (`better-auth`/`pg`/`resend` in, `@workos-inc/…`
+    e `jose` out); `src/lib/auth.ts` + `auth-client.ts` + catch-all
+    `api/auth/[...all]`; `/sign-in` + `/consent` (UI proprietarie) + stili
+    `globals.css`; `src/proxy.ts` (guardia ottimistica `getSessionCookie`, solo
+    `/account`); `account`/`upgrade`/`actions` letti via `auth.api.getSession`;
+    MCP route verifica per **introspezione** (`getMcpSession`, token opachi)
+    mantenendo `INSTRUCTIONS`; well-known protected-resource + nuovo
+    authorization-server; `check-oauth.mjs` versione Better Auth; rinominato
+    `workos_user_id` → `user_id` **ovunque** (billing gate/store/webhook +
+    telemetry `tool_events`/`feedback` + tipi generati; Stripe metadata →
+    `app_user_id`) — nessuna tabella conserva la chiave legacy; rimosso
+    `src/app/auth/callback`.
+  - **DB:** `supabase/schemas/01_billing.sql` rinominato; nuovo
+    `03_auth.sql` (DDL Better Auth verbatim da `@better-auth/cli generate` +
+    RLS zero-policy); migrazione `00004_better_auth_and_user_id.sql` (rename +
+    tabelle auth), validata applicando l'intera catena su un Postgres usa-e-getta.
+    Aggiunti anche i `grant … to service_role` espliciti su tutte e tre le
+    tabelle (`users_billing`/`tool_events`/`feedback`, migrazione 00005), così un
+    rebuild da migrazioni riproduce lo stato funzionante senza le default
+    privileges della piattaforma.
+    `db:types` da rigenerare col DB linkato.
+  - **Brain:** nuova [ADR 0012](content/decisions/0012-mcp-auth-better-auth-self-hosted.md)
+    (supersedes 0001, che ora punta a 0012); riscritti
+    [mcp-auth-setup.md](content/knowledge/mcp-auth-setup.md) e
+    [dev-setup-guide.md](content/knowledge/dev-setup-guide.md); aggiornato
+    [billing-setup.md](content/knowledge/billing-setup.md); aggiornata la
+    `CLAUDE.md` di compagnia (stack + billing); nuovo `.env.example`.
+- **Follow-ups:** task umani (sez. C del piano): generare i segreti, `DATABASE_URL`
+  session pooler, verificare il dominio Resend `dottcomm.dev`, `npm run db:push` +
+  `db:types`, env su Vercel (aggiungi Better Auth, rimuovi WorkOS), riconnettere
+  il connector Claude (DCR), poi **decommissionare WorkOS** (via i $100/mese). Il
+  branch `migrate-auth-to-better-auth` può essere cancellato (contenuto superato).
+  Aperti tecnici: enforcement degli scope in `withMcpAuth`; drift dello schema
+  Better Auth agli upgrade (ri-`generate` + diff su `03_auth.sql`).
+
 ## 2026-07-07 — Landing: riposizionamento «estensione di Claude» + copy allineata ai tool
 
 - **Did:** rilavorata la copy della landing partendo dai suggerimenti dell'utente,

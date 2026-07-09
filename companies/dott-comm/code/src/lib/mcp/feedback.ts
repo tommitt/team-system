@@ -52,7 +52,7 @@ export function registerFeedback(server: McpServer) {
       let ok = true;
       try {
         const { error } = await getSupabaseAdmin().from("feedback").insert({
-          workos_user_id: userId,
+          user_id: userId,
           categoria,
           messaggio,
           contesto: contesto ?? null,

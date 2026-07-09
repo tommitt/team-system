@@ -10,30 +10,30 @@ import type { Plan } from "./gate";
  */
 
 /** Lazy-provision a billing row without touching the usage counter. */
-export async function ensureBillingRow(workosUserId: string): Promise<void> {
+export async function ensureBillingRow(userId: string): Promise<void> {
   const { error } = await getSupabaseAdmin()
     .from("users_billing")
     .upsert(
-      { workos_user_id: workosUserId },
-      { onConflict: "workos_user_id", ignoreDuplicates: true },
+      { user_id: userId },
+      { onConflict: "user_id", ignoreDuplicates: true },
     );
   if (error) throw error;
 }
 
 export async function setStripeCustomer(
-  workosUserId: string,
+  userId: string,
   stripeCustomerId: string,
 ): Promise<void> {
   const { error } = await getSupabaseAdmin()
     .from("users_billing")
     .update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString() })
-    .eq("workos_user_id", workosUserId);
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
 /** checkout.session.completed → subscription is live. */
 export async function activateSubscription(
-  workosUserId: string,
+  userId: string,
   stripeCustomerId: string,
   stripeSubscriptionId: string | null,
 ): Promise<void> {
@@ -41,26 +41,26 @@ export async function activateSubscription(
     .from("users_billing")
     .upsert(
       {
-        workos_user_id: workosUserId,
+        user_id: userId,
         stripe_customer_id: stripeCustomerId,
         stripe_subscription_id: stripeSubscriptionId,
         plan: "active",
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "workos_user_id" },
+      { onConflict: "user_id" },
     );
   if (error) throw error;
 }
 
 /**
  * Set the plan for the row matching a Stripe customer id; falls back to the
- * workos_user_id carried in Stripe metadata when the mapping isn't stored yet.
+ * app user id carried in Stripe metadata when the mapping isn't stored yet.
  * Returns false when no row matched (caller logs it).
  */
 export async function setPlanByStripeCustomer(
   stripeCustomerId: string,
   plan: Plan,
-  opts: { workosUserIdFallback?: string; clearSubscriptionId?: boolean } = {},
+  opts: { userIdFallback?: string; clearSubscriptionId?: boolean } = {},
 ): Promise<boolean> {
   const patch: TablesUpdate<"users_billing"> = {
     plan,
@@ -73,16 +73,16 @@ export async function setPlanByStripeCustomer(
     .from("users_billing")
     .update(patch)
     .eq("stripe_customer_id", stripeCustomerId)
-    .select("workos_user_id");
+    .select("user_id");
   if (byCustomer.error) throw byCustomer.error;
   if (byCustomer.data.length > 0) return true;
 
-  if (opts.workosUserIdFallback) {
+  if (opts.userIdFallback) {
     const byUser = await supabase
       .from("users_billing")
       .update({ ...patch, stripe_customer_id: stripeCustomerId })
-      .eq("workos_user_id", opts.workosUserIdFallback)
-      .select("workos_user_id");
+      .eq("user_id", opts.userIdFallback)
+      .select("user_id");
     if (byUser.error) throw byUser.error;
     return byUser.data.length > 0;
   }

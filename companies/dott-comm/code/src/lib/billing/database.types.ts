@@ -46,7 +46,7 @@ export type Database = {
           created_at: string
           id: number
           messaggio: string
-          workos_user_id: string
+          user_id: string
         }
         Insert: {
           categoria: string
@@ -54,7 +54,7 @@ export type Database = {
           created_at?: string
           id?: never
           messaggio: string
-          workos_user_id: string
+          user_id: string
         }
         Update: {
           categoria?: string
@@ -62,7 +62,7 @@ export type Database = {
           created_at?: string
           id?: never
           messaggio?: string
-          workos_user_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -75,7 +75,7 @@ export type Database = {
           outcome: string
           session_id: string | null
           tool: string
-          workos_user_id: string
+          user_id: string
         }
         Insert: {
           args_keys?: string[] | null
@@ -85,7 +85,7 @@ export type Database = {
           outcome: string
           session_id?: string | null
           tool: string
-          workos_user_id: string
+          user_id: string
         }
         Update: {
           args_keys?: string[] | null
@@ -95,7 +95,7 @@ export type Database = {
           outcome?: string
           session_id?: string | null
           tool?: string
-          workos_user_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -110,7 +110,7 @@ export type Database = {
           trial_started_at: string
           updated_at: string
           usage_count: number
-          workos_user_id: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -122,7 +122,7 @@ export type Database = {
           trial_started_at?: string
           updated_at?: string
           usage_count?: number
-          workos_user_id: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -134,7 +134,7 @@ export type Database = {
           trial_started_at?: string
           updated_at?: string
           usage_count?: number
-          workos_user_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -144,7 +144,7 @@ export type Database = {
     }
     Functions: {
       increment_usage: {
-        Args: { p_workos_user_id: string }
+        Args: { p_user_id: string }
         Returns: {
           daily_usage_count: number
           plan: string
