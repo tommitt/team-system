@@ -2,7 +2,7 @@
 title: Corpus di retrieval — architettura e operazioni
 status: active
 owner: ttassi
-updated: 2026-07-10
+updated: 2026-07-15
 tags: [rag, corpus, retrieval, grounding, postgres, pgvector, mcp, ingestione, operazioni]
 ---
 
@@ -95,7 +95,18 @@ npm run ingest:embed -- --limit 500
 # 3. Arricchimento citazioni ellittiche + verifica + sign-off: skill /arricchisci-citazioni
 #    (fan-out di subagenti Haiku; prep-candidates → subagenti → verifica-citazioni).
 #    Nessuna Batch API, nessuna chiave tier-1: gira sotto l'auth della sessione.
+
+# 0. Stato della pipeline in prod (read-only): quante ingestioni/embedding/arricchimenti
+#    mancano, con il comando per chiudere ogni buco. Skill /stato-corpus.
+npm run ingest:status
 ```
+
+Gli script di ingestione caricano solo `.env.local`/`.env` (non `.env.prod`): per
+puntare a **prod** si esportano nel `process.env` le tre var di prod
+(`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`) — hanno precedenza
+sul `.env.local` — e la `COHERE_API_KEY` arriva da `.env.local`. Gli script di
+`scripts/enrich/` e `status.mts` leggono invece `DATABASE_URL` direttamente da
+`.env.prod`.
 
 Schema: modifiche via flusso dichiarativo (ADR 0007) su `supabase/schemas/04_corpus.sql`.
 **Attenzione**: `supabase db diff` (pg-delta) **non emette le REVOKE sui privilegi
@@ -107,7 +118,12 @@ migration del 2026-07-10). Senza, la funzione sarebbe chiamabile da `anon`.
 
 - **Idempotenza adapter**: stesso `identificativo` + stesso `hash_contenuto` →
   skip; hash cambiato → delete+reinsert dei chunk in transazione, bump
-  `verificato_il`; ogni run scrive una riga in `corpus_ingestion_runs`.
+  `verificato_il`; ogni run scrive una riga in `corpus_ingestion_runs`. Una
+  **collisione sull'`identificativo` unico** (insert che viola il vincolo, es.
+  atto ri-elencato dall'AdE sotto due mesi, o gap read-after-write dopo
+  un'interruzione) **non fa cadere la run**: `upsertDocumento` la ri-risolve come
+  skip/update (`risolviCollisione`, con warning). Una collisione a *hash diverso*
+  è invece un sintomo di `identificativo` ambiguo da disambiguare a monte.
 - **Provenienza citabile**: `percorso` gerarchico completo ("DPR 917/1986 >
   TITOLO I > Capo IV > Art. 51 — …"), `pagina_da/a`, `url_origine` su ogni hit.
 - **Degradazione dichiarata**: senza chiave Cohere (o con `CORPUS_EMBEDDINGS=false`)
@@ -127,6 +143,10 @@ migration del 2026-07-10). Senza, la funzione sarebbe chiamabile da `anon`.
 - **Prassi AdE**: i link mese si **ricavano** dalla pagina-anno, non si
   costruiscono (l'AdE ha refusi nei propri URL, es. `settembre-2023-intepelli_`).
   L'indice dei PDF (righe coi puntini di guida) va mascherato prima di chunkare.
+  Lo **stesso interpello compare sotto più mesi** (stesso PDF, stesso hash):
+  genera una collisione di `identificativo` che l'upsert assorbe come skip (vedi
+  *Contratti chiave*). La prassi è **voluminosa** (gli interpelli sono centinaia
+  l'anno: ~950 doc / ~6k chunk per 2023→metà-2026).
 - **Istruzioni modelli**: `unpdf` estrae pulito i PDF multi-colonna (ancore
   QUADRO/SEZIONE/Rigo) — la escape hatch Python/PyMuPDF prevista NON è servita.
   `anno_imposta = anno modello − 1`.

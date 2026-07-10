@@ -107,17 +107,89 @@ export async function upsertDocumento(
     esito = "aggiornato";
     run.aggiornati++;
   } else {
-    const inserito = orThrow(
-      await db.from("corpus_documenti").insert(riga).select("id").single(),
-      `insert documento ${doc.identificativo}`,
-    ) as { id: string };
-    documentoId = inserito.id;
+    const ins = await db
+      .from("corpus_documenti")
+      .insert(riga)
+      .select("id")
+      .single();
+    if (ins.error) {
+      // Collisione sull'`identificativo` unico: un'altra riga con lo stesso
+      // identificativo esiste già ma la SELECT sopra non l'ha vista. Succede
+      // quando l'AdE ri-elenca lo stesso atto sotto due mesi, o quando — dopo
+      // un'interruzione — una run precedente l'aveva già scritto (gap
+      // read-after-write). NON è un motivo per far cadere l'intera run
+      // dell'anno: la si ri-risolve come i casi normali (skip o update).
+      if (ins.error.code === "23505") {
+        return await risolviCollisione(doc, chunks, run);
+      }
+      throw new Error(`insert documento ${doc.identificativo}: ${ins.error.message}`);
+    }
+    documentoId = (ins.data as { id: string }).id;
     esito = "nuovo";
     run.nuovi++;
   }
 
   await scriviChunks(documentoId, doc, chunks, run);
   return esito;
+}
+
+/**
+ * Ri-risolve un documento che ha colliso sull'`identificativo` unico in insert.
+ * Ri-legge la riga esistente e applica lo stesso contratto della via normale:
+ * stesso hash → skip; hash diverso → update (delete+reinsert dei chunk). Il
+ * warning rende visibile la collisione (utile se è un caso di identificativo
+ * ambiguo — due atti distinti sullo stesso numero — da disambiguare a monte).
+ */
+async function risolviCollisione(
+  doc: DocumentoDaIngerire,
+  chunks: Chunk[],
+  run: RunLog,
+): Promise<EsitoUpsert> {
+  const db = getDb();
+  const gia = orThrow(
+    await db
+      .from("corpus_documenti")
+      .select("id, hash_contenuto")
+      .eq("identificativo", doc.identificativo)
+      .single(),
+    `rilettura documento in collisione ${doc.identificativo}`,
+  ) as { id: string; hash_contenuto: string };
+
+  if (gia.hash_contenuto === doc.hashContenuto) {
+    console.warn(`  ⚠️ collisione ${doc.identificativo} (stesso hash) — salto`);
+    return "skip";
+  }
+
+  console.warn(
+    `  ⚠️ collisione ${doc.identificativo} (hash diverso) — aggiorno la riga esistente`,
+  );
+  const oggi = new Date().toISOString().slice(0, 10);
+  orThrow(
+    await db
+      .from("corpus_documenti")
+      .update({
+        estremi: doc.estremi,
+        titolo: doc.titolo ?? null,
+        url_origine: doc.urlOrigine,
+        data_pubblicazione: doc.dataPubblicazione ?? null,
+        anno_imposta: doc.annoImposta ?? null,
+        hash_contenuto: doc.hashContenuto,
+        verificato_il: oggi,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", gia.id)
+      .select("id")
+      .single(),
+    `update documento in collisione ${doc.identificativo}`,
+  );
+  const { error: delErr } = await db
+    .from("corpus_chunks")
+    .delete()
+    .eq("documento_id", gia.id);
+  if (delErr) throw new Error(`delete chunk: ${delErr.message}`);
+  run.aggiornati++;
+  await scriviChunks(gia.id, doc, chunks, run);
+  return "aggiornato";
 }
 
 async function scriviChunks(

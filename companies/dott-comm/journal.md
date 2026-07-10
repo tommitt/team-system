@@ -12,6 +12,37 @@ Format:
 - **Follow-ups:** anything left open
 ```
 
+## 2026-07-15 — Backfill prassi 2024→2026 in prod, embed completo, fix idempotenza, skill /stato-corpus
+- **Did:** completata l'ingestione del corpus in **produzione**. Prassi backfillata
+  2024/2025/2026 (2023 c'era già): ora **949 doc prassi**, **7237 chunk totali**,
+  **embedding 7237/7237** (0 mancanti), citazioni **11 956** (11 715 regex +
+  241 LLM, tutte approvate). Arricchimento fermato al **pilota** (4 subagenti
+  Haiku × 50 chunk → 84 citazioni grounded approvate, 0 allucinazioni) per scelta
+  esplicita: il resto del backlog è rimandato (vedi Follow-ups).
+- **Changed:**
+  - **Fix idempotenza** (`code/scripts/ingest/lib/upsert.ts`): una collisione
+    sull'`identificativo` unico in insert non fa più cadere l'intera run —
+    `risolviCollisione` la ri-risolve come skip/update. Causa: l'AdE ri-elenca lo
+    stesso interpello sotto più mesi (stesso hash). Prima crashava a metà anno.
+  - **Nuovo script + npm alias** `code/scripts/ingest/status.mts` /
+    `npm run ingest:status`: verifica read-only dello stato pipeline in prod
+    (ingestioni/embedding/arricchimento) con verdetto azionabile.
+  - **Nuova skill** [`/stato-corpus`](.claude/skills/stato-corpus/SKILL.md) che la
+    incapsula.
+  - Aggiornata [content/knowledge/corpus-retrieval.md](content/knowledge/corpus-retrieval.md):
+    quirk AdE (ri-elencazione → collisione assorbita), resilienza idempotenza,
+    caricamento env prod per gli script, comando di stato.
+- **Follow-ups:**
+  - **Backlog arricchimento** (~5200 chunk candidati) non drenato. Attenzione: la
+    coda **non arriva mai a 0** (chunk con sole citazioni ellittiche, senza atto
+    nominato). Inoltre `prep-candidates` pesca sempre gli id più bassi → ri-pesca
+    la coda sterile ogni giro: per un one-pass sull'intero backlog serve prima
+    paginare per id-range (oggi non implementato).
+  - `corpus_ingestion_runs` ha righe `in_corso`/`errore` storiche delle
+    interruzioni (rumore diagnostico, non bloccanti).
+  - Untracked `code/scripts/enrich/extract-citazioni.mts`: helper di troppo creato
+    da un subagente, non parte del design — da rimuovere.
+
 ## 2026-07-10 — Loop di correzione dell'arricchimento (gate anti-allucinazione)
 - **Did:** chiuso il loop sui chunk rigettati. Il primo giro aveva scartato 28
   citazioni di over-reach (il modello riempiva con la sua conoscenza, non col
