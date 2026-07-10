@@ -17,7 +17,12 @@
     "db:push": "supabase db push",
     "db:new": "supabase migration new",
     "db:lint": "supabase db lint",
-    "db:types": "supabase gen types typescript --linked > src/lib/billing/database.types.ts"
+    "db:types": "supabase gen types typescript --linked > src/lib/billing/database.types.ts",
+    "ingest:normattiva": "tsx scripts/ingest/normattiva.ts",
+    "ingest:prassi": "tsx scripts/ingest/prassi-ade.ts",
+    "ingest:istruzioni": "tsx scripts/ingest/istruzioni.ts",
+    "ingest:embed": "tsx scripts/ingest/embed-missing.ts",
+    "enrich:citazioni": "tsx scripts/enrich/citazioni-batch.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
@@ -38,10 +43,13 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cheerio": "^1.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "supabase": "^2.109.1",
+    "tsx": "^4.23.0",
     "typescript": "^5",
+    "unpdf": "^1.6.2",
     "vitest": "^3.2.0"
   }
 }

@@ -1,0 +1,29 @@
+{
+  "_commento": [
+    "Manifest pilota Normattiva (ADR 0014). Ampliare questo file È l'unico gesto",
+    "necessario per aggiungere una norma al corpus: l'adapter non va toccato.",
+    "`urn` = URN-NIR dell'atto (senza ~art); `estremi` DEVE essere la forma",
+    "canonica prodotta da `src/lib/parse/riferimenti-norma.ts` (\"DPR 917/1986\"),",
+    "perché è la chiave su cui `collegaCitazioniAiDocumenti` chiude il grafo."
+  ],
+  "atti": [
+    {
+      "identificativo": "urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917",
+      "urn": "urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917",
+      "estremi": "DPR 917/1986",
+      "titolo": "Testo unico delle imposte sui redditi (TUIR)"
+    },
+    {
+      "identificativo": "urn:nir:stato:decreto.del.presidente.della.repubblica:1972-10-26;633",
+      "urn": "urn:nir:stato:decreto.del.presidente.della.repubblica:1972-10-26;633",
+      "estremi": "DPR 633/1972",
+      "titolo": "Istituzione e disciplina dell'imposta sul valore aggiunto"
+    },
+    {
+      "identificativo": "urn:nir:stato:decreto.legislativo:1992-12-31;546",
+      "urn": "urn:nir:stato:decreto.legislativo:1992-12-31;546",
+      "estremi": "D.Lgs. 546/1992",
+      "titolo": "Disposizioni sul processo tributario"
+    }
+  ]
+}

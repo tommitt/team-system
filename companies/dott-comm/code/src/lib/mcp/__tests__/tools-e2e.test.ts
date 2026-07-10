@@ -57,6 +57,10 @@ describe("MCP end-to-end", () => {
         "raccolta_documenti",
         "comunica_versamenti",
         "invia_feedback",
+        "corpus_cerca",
+        "corpus_leggi",
+        "corpus_norma",
+        "corpus_indice",
       ].sort(),
     );
   });

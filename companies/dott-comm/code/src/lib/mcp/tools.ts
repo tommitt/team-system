@@ -6,6 +6,7 @@ import { registerDetrazioneSanitaria } from "./skills/detrazione-sanitaria";
 import { registerRavvedimento } from "./skills/ravvedimento";
 import { registerTriageAtto } from "./skills/triage-atto";
 import { registerScadenzeCliente } from "./skills/scadenze-cliente";
+import { registerCorpus } from "./skills/corpus";
 import { registerRaccoltaDocumenti } from "./loops/raccolta-documenti";
 import { registerComunicaVersamenti } from "./loops/comunica-versamenti";
 import { registerPrompts } from "./prompts";
@@ -38,6 +39,10 @@ export function registerTools(server: McpServer) {
   registerRavvedimento(server); // S9  — versamenti tardivi
   registerTriageAtto(server); // S2/W1 paste-in — termini perentori degli atti
   registerScadenzeCliente(server); // T1 client-local — derivazione scadenzario
+
+  // Corpus (ADR 0014) — grounding delle domande puntuali su fonti ufficiali:
+  // corpus_cerca / corpus_leggi / corpus_norma / corpus_indice.
+  registerCorpus(server);
 
   // Loops (area 09 — il fossato), in forma campagna sul portafoglio
   registerRaccoltaDocumenti(server); // L1 — il sollecito

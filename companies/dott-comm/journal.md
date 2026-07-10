@@ -12,6 +12,39 @@ Format:
 - **Follow-ups:** anything left open
 ```
 
+## 2026-07-10 — Corpus di retrieval per le domande puntuali (pipeline completa)
+- **Did:** implementata la pipeline end-to-end di grounding (ADR 0014):
+  ingestione (Normattiva/prassi AdE/istruzioni ai modelli) → Postgres con ricerca
+  ibrida FTS+vettoriale (RRF) → 4 tool MCP `corpus_*` → arricchimento citazioni
+  regex-first + LLM con sign-off. Spike reali sulle tre fonti (quirk risolti:
+  export AKN di Normattiva sessione-dipendente e contenitori piatti da
+  ricostruire; link-mese AdE da scrapare per i refusi negli URL; indici PDF da
+  mascherare). Verificato in locale: ingest idempotente del TUIR (236 art., 398
+  chunk) + 3 circolari 2023 + 2 fascicoli Redditi PF 2026; grafo citazionale che
+  chiude prassi→TUIR; i 4 tool esercitati contro il DB con provenienza, avviso
+  temporale e `DISCLAIMER_BOZZA`; 165 test verdi (chunker, citazioni, normalizer,
+  formatter).
+- **Changed:**
+  - ADR: [0014-corpus-fonti-pubbliche-retrieval.md](content/decisions/0014-corpus-fonti-pubbliche-retrieval.md) (nuovo).
+  - Knowledge: [corpus-retrieval.md](content/knowledge/corpus-retrieval.md) (nuovo — architettura + operazioni + quirk); env vars documentate in `.env.local.example`/`.env.example`.
+  - Skill: [`verifica-fonti`](.claude/skills/verifica-fonti/SKILL.md) (nuova — sign-off del contenuto generato, gemella di `verifica-costanti`).
+  - Brainstorm: [biblioteca-commercialisti.md](content/brainstorms/biblioteca-commercialisti.md) — «prossimi passi» (§5.5) segnati superati da ADR 0014.
+  - Codice: `supabase/schemas/04_corpus.sql` + migrazione (con REVOKE aggiunta a mano); `src/lib/corpus/*` (retrieval lib); `src/lib/mcp/skills/corpus.ts` + composer + istruzioni server; `src/lib/parse/riferimenti-norma.ts` (normalizzatore, perno del grafo); `scripts/ingest/**` e `scripts/enrich/**` (adapter, embed, batch LLM); devDeps `tsx`/`unpdf`/`cheerio`; npm scripts `ingest:*`/`enrich:*`.
+- **Poi, stessa sessione — reranker implementato** (ADR 0014 §Aggiornamento
+  2026-07-10): `src/lib/corpus/rerank.ts` (Cohere rerank-3.5 sul pool ≈40 fuso,
+  taglia al top-N) + `config.ts` con due opt-out espliciti `CORPUS_EMBEDDINGS` /
+  `CORPUS_RERANK` (default on con la chiave; scelta: variabili esplicite, non la
+  sola presenza della chiave). Entrambe le degradazioni dichiarate nell'output.
+  Verificati in locale i 3 rami di degradazione (chiave assente, flag off, limite
+  rispettato); +7 test (172 totali). Registrato anche che la FTS usa `ts_rank_cd`,
+  non BM25 stretto (docs allineati).
+- **Follow-ups (rinviati per decisione, ADR 0014):** golden set + eval harness;
+  automazione refresh (cron); diff di produzione delle note redazionali +
+  relativo pass LLM; valutare BM25 vero (ParadeDB `pg_search`) solo se serve.
+  Prima di andare in prod servono `COHERE_API_KEY` (script + Vercel) e
+  `ANTHROPIC_API_KEY` (solo script), più un giro di ingestione più profondo del
+  pilota.
+
 ---
 
 ## 2026-07-08 — UX billing web: «Accedi» in nav, /account autonomo, /upgrade auto-inoltra a Stripe

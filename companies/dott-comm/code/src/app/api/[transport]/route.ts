@@ -31,6 +31,13 @@ const INSTRUCTIONS = [
     "fare, vorrebbe un risultato diverso da quello prodotto, o esprime attrito o frustrazione, " +
     "proponi di segnalarlo al team con il tool `invia_feedback` e invialo dopo il suo consenso. " +
     "Non includere mai dati fiscali dei clienti dello studio nel feedback.",
+  "",
+  "GROUNDING DELLE DOMANDE PUNTUALI — per qualsiasi domanda fiscale di merito (aliquote, " +
+    "adempimenti, casi specifici) NON rispondere a memoria: chiama prima `corpus_cerca` e fonda " +
+    "la risposta sui risultati, citandone sempre estremi, sezione e pagina. Se il corpus non " +
+    "copre l'anno d'imposta chiesto o non trova nulla di pertinente, dillo esplicitamente invece " +
+    "di indovinare. Usa `corpus_norma` per il testo di una norma citata e `corpus_leggi` per il " +
+    "contesto attorno a un risultato.",
 ].join("\n");
 
 const handler = createMcpHandler(

@@ -1,0 +1,38 @@
+{
+  "_commento": [
+    "Istruzioni ministeriali ai modelli — manifest ESPLICITO per anno (ADR 0014).",
+    "L'aggiornamento annuale di questo file È il refresh della fonte: quando esce",
+    "il modello dell'anno nuovo si duplica il file (istruzioni-2027.json) e si",
+    "aggiornano `url` e `annoModello`. Nessun crawler da mantenere.",
+    "",
+    "`annoModello` è l'anno del MODELLO; l'anno d'imposta è annoModello − 1",
+    "(Redditi PF 2026 dichiara i redditi 2025). L'adapter lo calcola da solo.",
+    "URL verificati il 2026-07-10 (tutti 200 application/pdf)."
+  ],
+  "fascicoli": [
+    {
+      "identificativo": "istr:redditi-pf:2026:generale",
+      "estremi": "Redditi PF 2026 — Istruzioni generali",
+      "titolo": "Istruzioni generali alla dichiarazione dei redditi 2026",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9771542/Parte_Generale_istr_2026.pdf",
+      "annoModello": 2026,
+      "modello": "Redditi PF"
+    },
+    {
+      "identificativo": "istr:redditi-pf:2026:fasc1",
+      "estremi": "Redditi PF 2026 — Fascicolo 1",
+      "titolo": "Istruzioni per la compilazione — Persone fisiche, fascicolo 1",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/d/guest/pf1_istruzioni_2026",
+      "annoModello": 2026,
+      "modello": "Redditi PF"
+    },
+    {
+      "identificativo": "istr:redditi-pf:2026:fasc2",
+      "estremi": "Redditi PF 2026 — Fascicolo 2",
+      "titolo": "Istruzioni per la compilazione — Persone fisiche, fascicolo 2",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/d/guest/pf2_istruzioni_2026",
+      "annoModello": 2026,
+      "modello": "Redditi PF"
+    }
+  ]
+}
