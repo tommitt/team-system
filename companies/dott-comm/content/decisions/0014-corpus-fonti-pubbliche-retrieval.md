@@ -83,14 +83,21 @@ ha già affrontato per le costanti: **il default stantio silenzioso**.
    cambiato → delete+reinsert dei chunk in transazione; ogni run scrive una riga
    in `corpus_ingestion_runs` con un cursore incrementale.
 
-7. **Arricchimento regex-first, LLM per il resto, sign-off umano.** Le citazioni
-   normative italiane sono molto regolari: l'estrattore regex copre la massa a
-   costo zero (`metodo='regex'`, auto-approvate perché deterministiche). Il
-   residuo ambiguo va alla Batch API di Anthropic (−50%, prompt caching, output
-   strutturato), modello configurabile per pass (`claude-haiku-4-5` di default,
-   `claude-sonnet-5` per i volumi complessi), e atterra `approvata=false`. La
-   skill **`/verifica-fonti`** — modellata su `/verifica-costanti` — porta il
-   pending al sign-off umano.
+7. **Arricchimento regex-first, LLM per il resto, verifica+sign-off nella stessa
+   skill.** Le citazioni normative italiane sono molto regolari: l'estrattore
+   regex copre la massa a costo zero (`metodo='regex'`, auto-approvate perché
+   deterministiche). Il residuo ambiguo (citazioni ellittiche) va a un **fan-out
+   di subagenti** Claude Code (skill **`/arricchisci-citazioni`**): ogni subagent
+   estrae con la propria intelligenza, quindi gira **sotto l'auth della sessione,
+   non sulla chiave API tier-1** (niente rate limit da 5 req/min), e atterra
+   `approvata=false`. La **verifica (grounding: l'atto è davvero nel testo?) e il
+   sign-off sono l'ULTIMO passo della stessa skill** — non una pipeline separata
+   che può driftare. *Aggiornamento (stessa sessione): scartata la prima ipotesi
+   della Batch API di Anthropic — asincrona e strozzata dal rate limit dell'org
+   tier-1 — a favore dei subagenti; sul primo giro di prod la verifica ha
+   correttamente approvato 152 citazioni grounded e rigettato 28 di over-reach
+   del modello (atti non presenti nel testo). La regola resta quella dell'ADR
+   0011: mai un valore a peso legale non verificato che esce da un tool.*
 
 8. **Carve-out esplicito all'[ADR 0003](0003-track-a-stateless-client-local-state.md).**
    ADR 0003 vieta dati fiscali di dominio server-side. Il corpus è compatibile

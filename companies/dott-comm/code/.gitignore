@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Cache dei download di ingestione (ADR 0014)
 .ingest-cache/
+
+# Fan-out enrichment scratch (subagenti)
+.enrich-tmp/

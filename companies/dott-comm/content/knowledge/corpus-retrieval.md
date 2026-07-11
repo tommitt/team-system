@@ -55,7 +55,9 @@ ingestione (CLI, tsx)          →  Postgres (Supabase)          →  MCP (Verce
 - **Grafo citazionale prassi→norma**: `corpus_citazioni` collega ogni chunk agli
   atti che cita; `corpus_norma` fa il reverse-lookup (dato un articolo, chi lo
   cita). Estrazione **regex-first** (deterministica, auto-approvata) + **LLM** per
-  l'ellittico (Batch API, `approvata=false` → sign-off).
+  l'ellittico via **fan-out di subagenti** (skill `/arricchisci-citazioni`, sotto
+  l'auth della sessione — niente chiave API tier-1), `approvata=false` finché la
+  verifica+sign-off (ultimo passo della stessa skill) non conferma il grounding.
 
 ## I quattro tool `corpus_*`
 
@@ -75,8 +77,9 @@ chiamare `corpus_cerca` prima di rispondere a una domanda di merito.
 
 ## Operazioni
 
-Prerequisiti: `COHERE_API_KEY` (script + app), `ANTHROPIC_API_KEY` (solo script).
-Runbook stack locale: [local-dev-testing.md](./local-dev-testing.md).
+Prerequisiti: `COHERE_API_KEY` (script di embedding + app per la query). L'arricchimento
+citazioni NON usa la chiave API Anthropic: gira a subagenti sotto l'auth della
+sessione. Runbook stack locale: [local-dev-testing.md](./local-dev-testing.md).
 
 ```bash
 # 1. Ingestione (on demand, in sessione Claude Code). Idempotente: rieseguire è un no-op.
@@ -85,15 +88,13 @@ npm run ingest:prassi -- --anno 2023 --limit 5
 npm run ingest:istruzioni -- --anno 2026
 #   flag comuni: --anno --limit --dry-run --incremental
 
-# 2. Embedding dei chunk nuovi (disaccoppiato dal parsing, ripartibile)
+# 2. Embedding dei chunk nuovi (disaccoppiato dal parsing, ripartibile).
+#    Gestisce il rate limit per-minuto delle chiavi Cohere trial (attese + passo fra i lotti).
 npm run ingest:embed -- --limit 500
 
-# 3. Arricchimento citazioni ellittiche (Batch API, −50%). Modello configurabile.
-npm run enrich:citazioni -- --limit 200                    # default claude-haiku-4-5
-npm run enrich:citazioni -- --model claude-sonnet-5 --limit 50
-
-# 4. Sign-off umano del contenuto generato (citazioni LLM + note redazionali)
-#    → skill /verifica-fonti
+# 3. Arricchimento citazioni ellittiche + verifica + sign-off: skill /arricchisci-citazioni
+#    (fan-out di subagenti Haiku; prep-candidates → subagenti → verifica-citazioni).
+#    Nessuna Batch API, nessuna chiave tier-1: gira sotto l'auth della sessione.
 ```
 
 Schema: modifiche via flusso dichiarativo (ADR 0007) su `supabase/schemas/04_corpus.sql`.

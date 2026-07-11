@@ -21,8 +21,7 @@
     "ingest:normattiva": "tsx scripts/ingest/normattiva.ts",
     "ingest:prassi": "tsx scripts/ingest/prassi-ade.ts",
     "ingest:istruzioni": "tsx scripts/ingest/istruzioni.ts",
-    "ingest:embed": "tsx scripts/ingest/embed-missing.ts",
-    "enrich:citazioni": "tsx scripts/enrich/citazioni-batch.ts"
+    "ingest:embed": "tsx scripts/ingest/embed-missing.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",

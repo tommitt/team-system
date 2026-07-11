@@ -12,6 +12,55 @@ Format:
 - **Follow-ups:** anything left open
 ```
 
+## 2026-07-10 — Loop di correzione dell'arricchimento (gate anti-allucinazione)
+- **Did:** chiuso il loop sui chunk rigettati. Il primo giro aveva scartato 28
+  citazioni di over-reach (il modello riempiva con la sua conoscenza, non col
+  testo). Fix di radice: ogni citazione ora DEVE portare una **`quote` verbatim**
+  del chunk; `write-citazioni.mts` la verifica come sottostringa e scarta a monte
+  chi non combacia — un atto inventato richiederebbe una quote inesistente, che
+  non passa. La verifica fa grounding sulla quote (prende anche la
+  misattribuzione: quote vera, atto sbagliato). Skill aggiornata con un **loop
+  until-dry** (i chunk svuotati tornano candidati e si ri-processano finché non
+  esce più nulla) e targeting `--ids`. Provato end-to-end: un giro di correzione
+  (4 subagenti Haiku) ha **inserito 5 citazioni verbatim-grounded e bloccato 7
+  allucinazioni al gate**, 0 da rivedere a mano, tutte auto-approvate.
+- **Changed:** `scripts/enrich/{write-citazioni,verifica-citazioni,prep-candidates}.mts`
+  (gate quote + grounding sulla quote + `--ids`); skill `/arricchisci-citazioni`
+  (contratto con `quote`, loop di correzione). Due bug trovati testando e corretti:
+  match robusto agli spazi unicode dei PDF (una quote copiata su un a-capo non
+  falliva più) e `chunk_id` bigint restituito come stringa da node-pg (coercizione
+  a numero). Prod: 3921 regex + **157 llm approvate**, 0 pending.
+- **Follow-ups:** recall sui chunk che hanno GIÀ una citazione LLM ma ne
+  contengono altre non estratte (oggi `prep-candidates` li esclude) — un `--modo
+  recall` che riguarda i chunk sotto-citati è il prossimo affinamento.
+
+## 2026-07-10 — Deploy corpus in prod + arricchimento a subagenti (batch ritirata)
+- **Did:** portato il corpus in **produzione** e consolidato l'arricchimento
+  citazioni su un'unica via. Prod (`iivhluxuxxymjmsloehh`): migrazione applicata
+  (session pooler; la `REVOKE` sulla funzione `security definer` verificata),
+  `COHERE_API_KEY` su Vercel, ingeriti 3 norme + 3 istruzioni + 120 prassi 2023
+  (2592 chunk, **tutti embeddati**), grafo regex da 3921 archi. Retrieval
+  verificato live (fringe benefit → Risposta 421/E; reverse charge → DPR 633
+  art. 17). **Sostituita la Batch API** (asincrona e strozzata dal rate limit
+  tier-1 da 5 req/min) con un **fan-out di subagenti Haiku** sotto l'auth della
+  sessione: 8 subagenti in parallelo hanno estratto 180 citazioni in ~2 min
+  (mentre il batch era ancora in coda). Verifica+sign-off (grounding) eseguiti
+  nella stessa skill: **152 approvate, 28 rigettate** (over-reach del modello —
+  atti non presenti nel testo, es. leggi cinema attribuite a una tabella start-up).
+- **Changed:**
+  - Skill: **`/arricchisci-citazioni`** (nuova — discover → fan-out → verifica →
+    sign-off, un solo loop); **rimossa `/verifica-fonti`** (assorbita).
+  - Codice: `scripts/enrich/{prep-candidates,write-citazioni,verifica-citazioni}.mts`
+    (nuova via a subagenti); **rimossi `citazioni-batch.ts` + `lib/anthropic-batch.ts`**
+    e lo script npm `enrich:citazioni`. Hardening rate-limit su `embed-missing.ts`
+    (attese per-minuto sulle chiavi Cohere trial). ADR 0014 §7 e
+    [corpus-retrieval.md](content/knowledge/corpus-retrieval.md) aggiornati alla
+    via unica; `ANTHROPIC_API_KEY` non più necessaria (tolta dagli esempi env).
+- **Follow-ups:** **chiave Cohere di produzione** (la trial regge il pilota ma
+  non il backfill pieno); estendere prassi **2024→2026** (`ingest:prassi --anno
+  2024…` poi `ingest:embed`); i giri di arricchimento futuri usano
+  `/arricchisci-citazioni` con un cap più alto.
+
 ## 2026-07-10 — Corpus di retrieval per le domande puntuali (pipeline completa)
 - **Did:** implementata la pipeline end-to-end di grounding (ADR 0014):
   ingestione (Normattiva/prassi AdE/istruzioni ai modelli) → Postgres con ricerca

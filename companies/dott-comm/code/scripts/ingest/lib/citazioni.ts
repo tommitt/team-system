@@ -3,9 +3,9 @@
  *
  * Le citazioni normative italiane sono estremamente regolari: la regex copre la
  * massa a costo zero, in modo deterministico e testabile. Il residuo ambiguo
- * (citazioni ellittiche — "il medesimo articolo", "la norma citata" — e note
- * redazionali) va al pass LLM (`scripts/enrich/citazioni-batch.ts`), che atterra
- * `approvata=false` in attesa del sign-off umano (`/verifica-fonti`).
+ * (citazioni ellittiche — "il medesimo articolo", "la norma citata") va al pass
+ * LLM a subagenti (skill `/arricchisci-citazioni`), che atterra `approvata=false`
+ * e viene confermato nell'ultimo passo della stessa skill (verifica + sign-off).
  *
  * Le citazioni regex sono `approvata=true` all'origine: sono derivate
  * meccanicamente dal testo, non inferite: non c'è niente da approvare.
