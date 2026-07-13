@@ -54,6 +54,8 @@ describe("MCP end-to-end", () => {
         "ravvedimento",
         "triage_atto",
         "scadenze_cliente",
+        "valuta_ingresso_italia",
+        "costituzione_controllata_usa",
         "raccolta_documenti",
         "comunica_versamenti",
         "invia_feedback",
@@ -181,6 +183,80 @@ describe("MCP end-to-end", () => {
     expect(testo).not.toContain("BOZZA SOLLECITO — Verdi");
     expect(testo).toContain("fattura ACME di dicembre");
     expect(testo).toContain("studio/raccolta/dichiarativi-2026.md");
+  });
+
+  it("valuta_ingresso_italia: sole vendite senza PE → posizione IVA (rappr. fiscale)", async () => {
+    const testo = await chiama("valuta_ingresso_italia", {
+      cliente: "Acme Inc.",
+      obiettivo: "vendere il nostro software in Italia",
+      attivita: "solo_vendite",
+      presenza_fisica: "nessuna",
+      assumera_personale: false,
+      residenza_founder: "usa",
+    });
+    expect(testo).toContain("OPZIONE CONSIGLIATA: Posizione IVA (rappresentante fiscale)");
+    expect(testo).toContain("non può fare identificazione diretta");
+    expect(testo).toContain("RISPOSTE ALLE DOMANDE CHIAVE");
+    expect(testo).toContain("PIANO DI PARTENZA");
+    expect(testo).toContain("PROPOSTA DI INCARICO");
+    expect(testo).toContain("studio/ingresso/acme-inc.md");
+    expect(testo).toContain("BOZZA");
+  });
+
+  it("valuta_ingresso_italia: operazioni stabili con assunzioni → S.r.l. e instrada alla roadmap", async () => {
+    const testo = await chiama("valuta_ingresso_italia", {
+      cliente: "Beta LLC",
+      attivita: "operazioni",
+      presenza_fisica: "ufficio",
+      assumera_personale: true,
+      distribuira_utili: true,
+      residenza_founder: "usa",
+      orizzonte: "stabile",
+    });
+    expect(testo).toContain("OPZIONE CONSIGLIATA: S.r.l.");
+    expect(testo).toContain("5%"); // ritenuta dividendi
+    expect(testo).toContain("costituzione_controllata_usa");
+  });
+
+  it("valuta_ingresso_italia: founder in Italia → bandiera esterovestizione", async () => {
+    const testo = await chiama("valuta_ingresso_italia", {
+      cliente: "Gamma Corp",
+      attivita: "operazioni",
+      residenza_founder: "italia",
+    });
+    expect(testo).toContain("esterovestizione");
+    expect(testo).toContain("art. 73");
+  });
+
+  it("costituzione_controllata_usa: roadmap, stato, cosa manca, startup, bozze", async () => {
+    const testo = await chiama("costituzione_controllata_usa", {
+      denominazione: "Acme Italia",
+      parent_usa: "Acme Inc.",
+      stato_usa: "Delaware",
+      documenti_presenti: ["certificate_incorporation", "cf_parent"],
+      startup: {
+        distribuira_utili: true, // esclusione tipica della controllata USA
+        oggetto_innovativo: true,
+      },
+    });
+    // Roadmap con fasi e stato della checklist.
+    expect(testo).toContain("FASE A — Documenti dalla capogruppo USA");
+    expect(testo).toContain("[x] Certificate of Incorporation della parent USA");
+    expect(testo).toContain("apostille + traduzione giurata");
+    // Correzioni verificate: 10 giorni, 100% capitale, S.r.l.s. esclusa.
+    expect(testo).toContain("entro 10 GIORNI");
+    expect(testo).toContain("PER INTERO (100%)");
+    expect(testo).toContain("S.r.l.s.");
+    // Cosa manca, raggruppato per attore (board resolution non presente).
+    expect(testo).toContain("DA RICHIEDERE");
+    expect(testo).toContain("Board resolution");
+    // Startup: il divieto di distribuzione utili esclude.
+    expect(testo).toContain("VALUTAZIONE STARTUP INNOVATIVA: NON ammissibile");
+    expect(testo).toContain("Divieto assoluto di distribuzione di utili");
+    // Bozze e persistenza.
+    expect(testo).toContain("BOARD RESOLUTION");
+    expect(testo).toContain("studio/costituzioni/acme-italia.md");
+    expect(testo).toContain("BOZZA");
   });
 
   it("comunica_versamenti: campagna con riepilogo e bozze per canale", async () => {

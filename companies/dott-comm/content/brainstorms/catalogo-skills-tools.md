@@ -309,3 +309,43 @@ calcolatori domande-spot (proposta: `simula_forfettario` e
 `dividendi_vs_compenso` gated, `deducibilita` come prompt ungated,
 costo-dipendente rinviato — da decidere), il resto delle skill
 S1–S6/S8/S10/S11 e i watchdog W2/W3.
+
+**Aggiornamento 2026-07-10 — S14 `costituzione_controllata_usa` (area 05).**
+Prima capability dell'area 05 (consulenza societaria): la roadmap per costituire
+una **S.r.l. italiana interamente controllata da una società USA** (socio unico
+persona giuridica estera). Tool gated + prompt `metodo_costituzione_controllata_usa`,
+con dominio puro in `code/src/lib/fiscal/costituzione-estera.ts` (checklist per
+fasi 0/A/B/C/D/E, gate `valutaStartupInnovativa`, tracce di bozza). Ogni passo è
+**grounded** con `fonte` e flag `verificato`/`da_verificare` da un **fan-out di 6
+ricerche mirate** su fonti ufficiali (Normattiva, AdE, Registro Imprese/MIMIT,
+Notariato, HCCH, Convenzione Italia-USA), stessa disciplina del registro costanti
+(ADR 0011). Correzioni emerse dalla ricerca: proprietà corporate estera **non**
+esclude la startup innovativa (ex lett. a abrogata dal D.L. 76/2013 — l'esclusione
+vera è il divieto di distribuire utili), deposito RI a **10 giorni**, capitale
+**100%** all'atto per socio unico, S.r.l.s. esclusa, apostille+traduzione giurata
+sui documenti USA, dividendi al parent 5%/15% (mai 0%), titolare effettivo in
+riattivazione post-CGUE. Stato pratica in `studio/costituzioni/<societa>.md`.
+Decisione: [ADR 0014](../decisions/0014-tool-costituzione-controllata-usa.md); doc:
+[costituzione-controllata-usa](../knowledge/costituzione-controllata-usa.md). 128
+test verdi. Resta il gate G-pilota (validazione con notaio) sulle voci
+`da_verificare`.
+
+**Aggiornamento 2026-07-10 — S15 `valuta_ingresso_italia` (advisor a monte, area 04/05).**
+L'advisor che sta **prima** di S14: una società USA arriva con situazione +
+obiettivo e il tool **valuta il caso reale e sceglie il veicolo giusto** tra
+posizione IVA (rappresentante fiscale), ufficio di rappresentanza, branch
+(stabile organizzazione) e S.r.l. — senza dare per scontata la S.r.l. Restituisce
+riepilogo, raccomandazione (motivi + alternative + bandiere), risposte alle
+domande chiave, piano di partenza e **bozza di proposta di incarico** dello studio
+(l'Agent parla a nome di uno studio di commercialisti); instrada a
+`costituzione_controllata_usa` quando vince la S.r.l. Dominio puro in
+`code/src/lib/fiscal/ingresso-italia.ts` (gate `livelloStabileOrganizzazione`,
+`raccomandaVeicolo`, FAQ, piano, proposta) + prompt `metodo_ingresso_italia`.
+Grounded con **fan-out di 5 ricerche mirate** (Normattiva, AdE, Registro Imprese,
+CNDCEC): perno = stabile organizzazione (art. 162 TUIR); USA extra-UE non può fare
+identificazione diretta (serve rappresentante fiscale); founder in Italia →
+esterovestizione (art. 73 TUIR); proposta d'incarico entro i vincoli di preventivo
+(art. 9 DL 1/2012), adeguata verifica (art. 18 D.Lgs. 231/2007) e deontologia
+(art. 44). Decisione: [ADR 0015](../decisions/0015-advisor-ingresso-italia-veicolo.md);
+doc: [ingresso-mercato-italiano-usa](../knowledge/ingresso-mercato-italiano-usa.md).
+142 test verdi.

@@ -27,6 +27,8 @@ export function registerPrompts(server: McpServer) {
               "- `studio/versamenti/<scadenza>.md` — stato delle comunicazioni di versamento: `Cliente | Importo | Canale | Inviata il | Confermata`. Alimentato da `comunica_versamenti`.",
               "- `studio/spese-sanitarie/<cliente>-<anno>.csv` — il riepilogo spese sanitarie di un contribuente, una riga per documento (colonne `Data,Fornitore,Descrizione,Importo,Rigo,Detraibile,Tracciabilita_richiesta,Pagamento_tracciabile,In_precompilata,Azione,Esito,Intestatario`) più i subtotali per rigo e la detrazione stimata in coda. È il CSV emesso dal tool `detrazione_sanitaria`: salvalo qui e importalo nel foglio Excel/Google Sheet dello studio. Audit trail difendibile in caso di controllo formale.",
               "- `studio/spese-sanitarie/config.md` — preferenze apprese seguendo il prompt `metodo_estrazione_spese_sanitarie`: dove sono archiviati i documenti (cartella locale / Google Drive / Dropbox), dove vive il calcolo (Excel locale / Google Sheet) e, opzionalmente, la riga `Colonne foglio` con lo schema personalizzato delle colonne (passato al tool come `colonne`). Chiesto una volta all'utente, poi riusato e modificabile.",
+              "- `studio/costituzioni/<societa>.md` — lo stato di una pratica di costituzione societaria (es. S.r.l. controllata da società USA): una riga per voce della checklist `Voce | Fase | A carico | Stato | Data` (stati: `da fare`, `richiesto`, `ricevuto`, `fatto`), più le date chiave (richiesta/ricezione documenti apostillati, atto, termine dei 10 giorni per il deposito al Registro Imprese, 30 giorni per il titolare effettivo). Alimentato dal tool `costituzione_controllata_usa`. Audit trail della pratica.",
+              "- `studio/ingresso/<cliente>.md` — l'orientamento di una società estera (es. USA) che valuta come entrare nel mercato italiano: la situazione raccolta, il veicolo consigliato (posizione IVA / ufficio di rappresentanza / branch / S.r.l.), e lo stato della proposta di incarico (`bozza`, `inviata`, `accettata`). Alimentato dal tool `valuta_ingresso_italia`; se il cliente sceglie la S.r.l., prosegue in `studio/costituzioni/<societa>.md`.",
               "",
               "Regole:",
               "- Date sempre assolute (YYYY-MM-DD), mai relative.",
@@ -132,6 +134,88 @@ export function registerPrompts(server: McpServer) {
               "- Chiaro su cosa fare e entro quando; un'unica call-to-action per messaggio.",
               "- Rassicurante sui timori tipici (proroga, rateizzazione, sanzioni) senza promettere nulla che il professionista non abbia confermato.",
               "- Ogni comunicazione resta una BOZZA: la invia lo studio dopo revisione, la responsabilità è del professionista.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
+  );
+
+  server.prompt(
+    "metodo_costituzione_controllata_usa",
+    "Metodo per assistere la costituzione di una S.r.l. italiana interamente controllata da una " +
+      "società USA: quali informazioni e documenti servono, in che ordine chiederli, e come usare " +
+      "il tool `costituzione_controllata_usa`.",
+    () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Assisti la costituzione di una S.r.l. italiana interamente controllata da una società USA (socio unico persona giuridica estera). Tu (il client) raccogli il contesto e i documenti; il tool `costituzione_controllata_usa` produce la roadmap ordinata, lo stato della checklist, cosa richiedere, la valutazione startup innovativa e le bozze. Ogni output è una BOZZA: i passaggi notarili e fiscali li conferma il professionista con notaio e consulente. Non inventare date, importi o requisiti: se un dato manca, chiedilo.",
+              "",
+              "PROCEDURA",
+              "0) Stato pratica. Leggi `studio/costituzioni/<societa>.md` se esiste (vedi `convenzione_studio_db`) e riprendi da dove si era rimasti; altrimenti parti pulito.",
+              "1) Contesto minimo (chiedi, una domanda alla volta): denominazione proposta della S.r.l.; nome e Stato USA della capogruppo; capitale sociale previsto e tipo di conferimento (denaro o natura — la natura esclude l'atto online); chi sarà amministratore ed è residente o non residente; se i documenti della parent sono già disponibili allo studio.",
+              "2) Documenti già presenti. Se hai accesso a una cartella dei documenti della pratica, scandiscila e derivane le chiavi già acquisite (es. `certificate_incorporation`, `board_resolution`, `cf_parent`) invece di chiederle all'utente. Passale come `documenti_presenti`.",
+              "3) Valutazione startup innovativa. Se il cliente valuta lo status di startup innovativa, chiedi i dati del blocco `startup`: distribuirà utili al parent (il divieto assoluto di distribuzione è di norma l'ostacolo per una controllata USA), oggetto innovativo, MPMI, attività prevalente di consulenza, mesi dalla costituzione, se nasce da operazioni straordinarie, e quale criterio d'innovazione è soddisfatto. Lascia vuoti i campi ignoti: finiscono tra i 'da confermare'.",
+              "4) Chiama `costituzione_controllata_usa` con i dati raccolti. Restituisce roadmap, stato, cosa richiedere e a chi, valutazione startup, bozze.",
+              "5) Presenta all'utente: i prossimi 1-2 passi concreti (di norma: procurare i documenti della parent con apostille+traduzione, e i codici fiscali di parent e amministratori), la lista di cosa richiedere, e — se ha chiesto lo status — l'esito startup innovativa. Evidenzia le voci ⚠️ DA VERIFICARE (prassi notarile, registro titolari effettivi in riattivazione, aliquota IRAP regionale) come punti da confermare, non come certezze.",
+              "6) Bozze. Le tracce di board resolution e procura sono OUTLINE da far adattare al legale USA e al notaio, non atti giuridici: salvale tra i documenti della pratica solo come base di lavoro.",
+              "7) Aggiorna `studio/costituzioni/<societa>.md` con lo stato: voci completate, date di richiesta/ricezione documenti, e i termini (10 giorni deposito al Registro Imprese, 30 giorni titolare effettivo quando il registro sarà riattivato).",
+              "",
+              "PUNTI FERMI (verificati) DA NON SBAGLIARE",
+              "- La proprietà corporate estera NON esclude la startup innovativa: il requisito 'persone fisiche in maggioranza' è stato abrogato nel 2013. Le esclusioni vere sono il divieto di distribuire utili, l'asticella d'innovazione e lo status MPMI.",
+              "- La S.r.l.s. (semplificata) NON è utilizzabile con un socio persona giuridica: serve la S.r.l. ordinaria.",
+              "- Socio unico = atto unilaterale → capitale versato al 100% all'atto (non 25%); può andare all'organo amministrativo o su conto escrow del notaio, quindi non serve un conto della società prima dell'iscrizione.",
+              "- Deposito al Registro Imprese entro 10 giorni (non 20); la società esiste solo con l'iscrizione.",
+              "- Documenti USA: apostille (Secretary of State dello Stato) + traduzione giurata. L'EIN non è un requisito italiano; servono i codici fiscali italiani di parent (AA5/6, Centro Operativo di Pescara) e amministratori.",
+              "- Dividendi verso la parent USA: ritenuta convenzionale 5% (≥25% voti da ≥12 mesi) o 15%, mai 0%; la direttiva madre-figlia UE non si applica.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
+  );
+
+  server.prompt(
+    "metodo_ingresso_italia",
+    "Metodo per orientare una società USA che valuta come entrare nel mercato italiano: quali " +
+      "domande fare per capire il caso reale, e come usare il tool `valuta_ingresso_italia` per " +
+      "raccomandare il veicolo giusto e proporre l'incarico allo studio.",
+    () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Orienta una società USA che vuole entrare in Italia. NON dare per scontato che serva una S.r.l.: prima capisci il caso reale, poi lascia che il tool `valuta_ingresso_italia` raccomandi il veicolo giusto tra posizione IVA (rappresentante fiscale), ufficio di rappresentanza, branch (stabile organizzazione) e S.r.l. controllata. Parli a nome di uno studio di commercialisti: l'obiettivo è dare un quadro chiaro e proporre, alla fine, un incarico allo studio come modo per procedere. Ogni output è una BOZZA e la decisione resta del cliente.",
+              "",
+              "PROCEDURA",
+              "0) Stato. Leggi `studio/ingresso/<cliente>.md` se esiste (vedi `convenzione_studio_db`) e riprendi; altrimenti parti dall'intervista.",
+              "1) Intervista (una domanda alla volta, tono semplice, niente gergo): ",
+              "   a. Qual è l'obiettivo in Italia? (vendere, aprire operazioni, assumere, testare il mercato, detenere IP...)",
+              "   b. Cosa farete concretamente in Italia? → mappa su `attivita`: solo_vendite / promozione / operazioni / holding_ip / rd.",
+              "   c. Avrete una presenza fisica? (nessuna / magazzino / ufficio / punto vendita) → `presenza_fisica`.",
+              "   d. Assumerete personale in Italia? → `assumera_personale`. Qualcuno concluderà contratti in Italia in nome vostro? → `conclude_contratti_in_italia`.",
+              "   e. Dove vivono e da dove gestiranno i founder? (USA / Italia / misto) → `residenza_founder` (determina il rischio esterovestizione).",
+              "   f. Volete rimpatriare gli utili al parent? → `distribuira_utili`. Vi serve la responsabilità limitata? → `vuole_responsabilita_limitata`.",
+              "   g. È un test di mercato o una presenza stabile? → `orizzonte`. E qual è l'entità USA esistente? → `us_entity`.",
+              "   Lascia vuoti i campi che il cliente non sa: il tool ragiona comunque e segnala cosa manca.",
+              "2) Chiama `valuta_ingresso_italia` con quanto raccolto. Restituisce: riepilogo situazione, veicolo consigliato con motivi e alternative, risposte alle domande chiave, piano di partenza, bozza di proposta di incarico.",
+              "3) Presenta con chiarezza: prima il riepilogo della loro situazione (falli sentire capiti), poi l'opzione consigliata e il perché, le alternative e quando cambiano, e le risposte alle loro domande. Evidenzia i punti ⚠️ da verificare (soglia stabile organizzazione, esterovestizione, ritenute) come cose da confermare col professionista, non come certezze.",
+              "4) Se il veicolo consigliato è la S.r.l., prosegui con `costituzione_controllata_usa` per la roadmap completa; per gli altri veicoli, elenca i primi passi del piano.",
+              "5) Chiudi con la proposta di incarico (bozza): è il modo per procedere con lo studio. Ricorda che l'adeguata verifica antiriciclaggio (tipicamente rafforzata, struttura estera) va completata prima del conferimento, e che la decisione di conferire l'incarico resta del cliente. Non fare offerte ingannevoli o pressanti (art. 44 Codice Deontologico).",
+              "6) Aggiorna `studio/ingresso/<cliente>.md` con la situazione, il veicolo consigliato e lo stato della proposta.",
+              "",
+              "PUNTI FERMI (verificati) DA NON SBAGLIARE",
+              "- Il perno è la stabile organizzazione (art. 162 TUIR): 'solo vendite' o 'ufficio di rappresentanza' reggono SOLO finché non c'è una S.O.; oltre quella soglia scatta l'imposta italiana sui redditi.",
+              "- Una società USA (extra-UE) NON può fare l'identificazione diretta IVA: per vendere in Italia senza struttura serve un rappresentante fiscale (responsabile in solido).",
+              "- L'ufficio di rappresentanza è solo promozione/ausiliario: niente vendite/contratti, o diventa una S.O. occulta tassabile retroattivamente.",
+              "- Branch = stessa società USA (nessuno scudo di responsabilità, ma nessuna ritenuta sul rimpatrio e perdite verso il parent). S.r.l. = soggetto separato (responsabilità limitata, dividendi con ritenuta 5%/15%).",
+              "- Founder che vivono e gestiscono dall'Italia → rischio esterovestizione (la società USA vista come residente in Italia, art. 73 TUIR): di norma meglio una società italiana con governance documentata.",
             ].join("\n"),
           },
         },

@@ -505,6 +505,37 @@ export const CAP_E4_VEICOLI_DISABILI = costante(
   "2026-07-07",
 );
 
+// --- Startup innovativa (D.L. 179/2012 art. 25) ---------------------------
+
+/**
+ * Durata massima dello status di startup innovativa, in mesi dalla costituzione
+ * (art. 25 c.2 lett. b). NB: la L. 162/2024 ha ristrutturato la PERMANENZA nella
+ * sezione speciale (3 anni base + estensione a 5 con almeno uno di cinque
+ * requisiti + scale-up fino a 9 anni), ma il tetto anagrafico della definizione
+ * resta 60 mesi. Usata come gate anagrafico nella valutazione di ammissibilità.
+ */
+export const STARTUP_DURATA_MAX_MESI = costante(
+  60,
+  "art. 25 c.2 D.L. 179/2012 conv. L. 221/2012; permanenza ristrutturata da L. 162/2024",
+  "2026-07-10",
+);
+/** Tetto al valore della produzione annua (dal 2° anno) per lo status. */
+export const STARTUP_TETTO_VALORE_PRODUZIONE = costante(
+  5_000_000,
+  "art. 25 c.2 lett. d D.L. 179/2012",
+  "2026-07-10",
+);
+/**
+ * Soglia del criterio R&S (uno dei tre alternativi, lett. h n.1): spese di
+ * ricerca e sviluppo ≥ 15% del maggiore tra costo e valore totale della
+ * produzione.
+ */
+export const STARTUP_SOGLIA_RS = costante(
+  0.15,
+  "art. 25 c.2 lett. h n.1 D.L. 179/2012",
+  "2026-07-10",
+);
+
 // --- Disclaimer condiviso, in coda a ogni output di calcolo ---------------
 
 export const DISCLAIMER_BOZZA =

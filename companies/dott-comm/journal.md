@@ -14,6 +14,56 @@ Format:
 
 ---
 
+## 2026-07-10 — S15 `valuta_ingresso_italia`: advisor a monte, dal caso reale al veicolo giusto
+
+- **Did:** costruito l'advisor che sta **prima** di S14 — una società USA arriva
+  con situazione + obiettivo e il tool **valuta il caso reale e sceglie il veicolo**
+  (posizione IVA / ufficio di rappresentanza / branch / S.r.l.), risponde alle
+  domande chiave, propone un piano di partenza e chiude con una **bozza di proposta
+  di incarico** dello studio (l'Agent parla a nome di uno studio di commercialisti).
+  Instrada a `costituzione_controllata_usa` quando vince la S.r.l. Grounded via
+  fan-out di 5 ricerche mirate su fonti ufficiali (Normattiva, AdE, Registro
+  Imprese, CNDCEC).
+- **Changed:** dominio puro `code/src/lib/fiscal/ingresso-italia.ts` (gate
+  `livelloStabileOrganizzazione`, `raccomandaVeicolo`, FAQ, piano, proposta);
+  tool gated `code/src/lib/mcp/skills/valuta-ingresso-italia.ts` (registrato in
+  `tools.ts`); prompt `metodo_ingresso_italia` + `convenzione_studio_db` esteso
+  (`studio/ingresso/`) in `prompts.ts`; test (unit sull'euristica + e2e), 142
+  verdi. Brain: [ADR 0015](content/decisions/0015-advisor-ingresso-italia-veicolo.md),
+  [knowledge/ingresso-mercato-italiano-usa](content/knowledge/ingresso-mercato-italiano-usa.md),
+  catalogo e mcp-user-guide aggiornati.
+- **Follow-ups:** gate G-pilota — validare col professionista la soglia stabile
+  organizzazione nei casi grigi (magazzino, R&D per il parent), l'assenza di branch
+  remittance tax sul caso USA, le aliquote convenzionali/clausola LOB del Trattato
+  USA-Italia, l'IRAP regionale e la lista Paesi AML ad alto rischio all'onboarding.
+  Perno verificato: la stabile organizzazione (art. 162 TUIR) e l'esterovestizione
+  (art. 73 TUIR) se i founder gestiscono dall'Italia.
+
+## 2026-07-10 — S14 `costituzione_controllata_usa`: roadmap grounded per S.r.l. USA-owned
+
+- **Did:** costruita la prima capability dell'area 05 — la roadmap per costituire
+  una **S.r.l. italiana interamente controllata da una società USA** (socio unico
+  persona giuridica estera): cosa serve e in che ordine, cosa richiedere al
+  cliente, valutazione startup innovativa, bozze già redigibili. Ogni passo
+  **grounded** via un fan-out di 6 ricerche mirate su fonti ufficiali (Normattiva,
+  AdE, Registro Imprese/MIMIT, Notariato, HCCH, Convenzione Italia-USA), con
+  `fonte` + flag `verificato`/`da_verificare` per ogni claim (disciplina ADR 0011).
+- **Changed:** dominio puro `code/src/lib/fiscal/costituzione-estera.ts` (checklist
+  per fasi + gate `valutaStartupInnovativa` + tracce bozza) e costanti startup in
+  `constants.ts`; tool gated `code/src/lib/mcp/skills/costituzione-controllata-usa.ts`
+  (registrato in `tools.ts`); prompt `metodo_costituzione_controllata_usa` +
+  `convenzione_studio_db` esteso (`studio/costituzioni/`) in `prompts.ts`; test
+  (unit sul gate + e2e), 128 verdi. Brain:
+  [ADR 0014](content/decisions/0014-tool-costituzione-controllata-usa.md),
+  [knowledge/costituzione-controllata-usa](content/knowledge/costituzione-controllata-usa.md),
+  catalogo e mcp-user-guide aggiornati.
+- **Follow-ups:** gate G-pilota — far validare da un notaio/professionista le voci
+  `da_verificare` (prassi notarile e lista documenti, firma digitale per non
+  residenti, sanzione PEC amministratori, ATECO 2025, IRAP regionale); riverificare
+  il **titolare effettivo** alla riattivazione del registro (nuovo termine post-CGUE
+  C-684/24 e C-685/24); valutare estensione a S.p.A. e conferimenti in natura.
+  Se il doc knowledge passa da `draft` ad `active`, ricitare gli URL puntuali.
+
 ## 2026-07-08 — UX billing web: «Accedi» in nav, /account autonomo, /upgrade auto-inoltra a Stripe
 
 - **Did:** dato un ingresso e un ruolo chiaro alle superfici billing del sito.

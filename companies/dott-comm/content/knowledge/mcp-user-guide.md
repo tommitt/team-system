@@ -91,6 +91,21 @@ verificare al professionista; roadmap nel
   solleciti documenti mirati e comunicazioni di versamento, con lo stato nei
   file `studio/` dello studio (prompt `convenzione_studio_db`,
   [ADR 0010](../decisions/0010-convenzione-studio-db-client-local.md)).
+- `valuta_ingresso_italia` — l'advisor a monte per una società USA che valuta come
+  entrare nel mercato italiano: dal caso reale (attività, founder, assunzioni,
+  rimpatrio) raccomanda il veicolo giusto (posizione IVA / ufficio di
+  rappresentanza / branch / S.r.l.), risponde alle domande chiave, propone un
+  piano di partenza e una bozza di proposta di incarico dello studio; instrada a
+  `costituzione_controllata_usa` quando la risposta è la S.r.l. (prompt
+  `metodo_ingresso_italia`,
+  [ADR 0015](../decisions/0015-advisor-ingresso-italia-veicolo.md)).
+- `costituzione_controllata_usa` — la roadmap per costituire una S.r.l. italiana
+  interamente controllata da una società USA: passi ordinati per fasi (documenti
+  dalla parent con apostille+traduzione, codici fiscali, atto notarile,
+  adempimenti post, fiscalità cross-border), cosa richiedere e a chi, valutazione
+  di ammissibilità a startup innovativa e bozze già redigibili (prompt
+  `metodo_costituzione_controllata_usa`,
+  [ADR 0014](../decisions/0014-tool-costituzione-controllata-usa.md)).
 
 ## Da completare in questa guida
 
